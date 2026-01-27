@@ -1,0 +1,94 @@
+- name: Setup WireGuard server
+  hosts: local
+  remote_user: root
+  become: true
+
+  vars:
+    wg_interface: wg0
+    wg_directory: /etc/wireguard
+    wg_port: 51820
+    wg_address_cidr: "10.8.0.1/24"
+    wg_out_interface: "eth0"
+
+  tasks:
+    - name: Install Wireguard
+      ansible.builtin.apt:
+        name: wireguard
+        state: present
+        update_cache: true
+
+    - name: Ensure /etc/wireguard
+      ansible.builtin.file:
+        path: "{{ wg_directory }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+
+    - name: Generate server private key
+      ansible.builtin.command: "wg genkey"
+      register: wg_private_key
+      changed_when: wg_private_key.rc == 0
+      args:
+        creates: "{{ wg_directory }}/{{ wg_interface }}.key"
+
+    - name: Save server private key
+      ansible.builtin.copy:
+        dest: "{{ wg_directory }}/{{ wg_interface }}.key"
+        content: "{{ wg_private_key.stdout }}\n"
+        owner: root
+        group: root
+        mode: "0600"
+      when: wg_private_key is changed
+
+    - name: Generate server public key
+      ansible.builtin.command: "wg pubkey"
+      register: wg_public_key
+      args:
+        stdin: "{{ lookup('file', wg_directory ~ '/' ~ wg_interface ~ '.key') }}"
+        creates: "{{ wg_directory }}/{{ wg_interface }}.pub"
+
+    - name: Save server public key
+      ansible.builtin.copy:
+        dest: "{{ wg_directory }}/{{ wg_interface }}.pub"
+        content: "{{ wg_public_key.stdout }}\n"
+        owner: root
+        group: root
+        mode: "0644"
+      when: wg_public_key is changed
+
+    - name: Enable IPv4 forwarding
+      ansible.builtin.copy:
+        dest: /etc/sysctl.d/99-wireguard.conf
+        content: "net.ipv4.ip_forward=1\n"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Reload sysctl
+
+    - name: Render WireGuard config
+      ansible.builtin.template:
+        src: wg0.conf.j2
+        dest: "{{ wg_directory }}/{{ wg_interface }}.conf"
+        owner: root
+        group: root
+        mode: "0600"
+      vars:
+        wg_private_key: "{{ (wg_private_key.stdout }}"
+      notify: Restart wireguard
+
+    - name: Enable and start WireGuard
+      ansible.builtin.systemd:
+        name: "wg-quick@{{ wg_interface }}"
+        enabled: true
+        state: started
+
+  handlers:
+    - name: Reload sysctl
+      ansible.builtin.command: sysctl --system
+      changed_when: false
+  
+    - name: Restart wireguard
+      ansible.builtin.systemd:
+        name: "wg-quick@{{ wg_interface }}"
+        state: restarted

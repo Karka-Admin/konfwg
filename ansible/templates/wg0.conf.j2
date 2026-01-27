@@ -1,0 +1,7 @@
+[Interface]
+Address = {{ wg_address_cidr }}
+ListenPort = {{ wg_port }}
+PrivateKey = {{ wg_private_key }}
+
+PostUp = iptables -t nat -A POSTROUTING -o {{ wg_out_interface }} -j MASQUERADE
+PostDown = iptables -t nat -D POSTROUTING -o {{ wg_out_interface }} -j MASQUERADE
