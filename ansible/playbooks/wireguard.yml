@@ -25,28 +25,63 @@
         group: root
         mode: "0700"
 
-    - name: Generate server private key
-      ansible.builtin.command: "wg genkey"
-      register: wg_private_key
-      changed_when: wg_private_key.rc == 0
-      args:
-        creates: "{{ wg_directory }}/{{ wg_interface }}.key"
+    - name: Check if private key file exists
+      ansible.builtin.stat:
+        path: "{{ wg_directory }}/{{ wg_interface }}.key"
+      register: wg_private_key_stat
 
-    - name: Save server private key
+    - name: Read private key if file exists
+      ansible.builtin.slurp:
+        src: "{{ wg_directory }}/{{ wg_interface }}.key"
+      register: wg_private_key_slurp
+      when: wg_private_key_stat.stat.exists
+
+    - name: Decode private key if exists
+      ansible.builtin.set_fact:
+        wg_private_key: "{{ wg_private_key_slurp.content | b64decode }}"
+      when: wg_private_key_stat.stat.exists
+
+    # COMMENT 1.0: Based on assumption that the private key is 32 (44 char) byte length base64 string ending with '='
+    - name: Validate existing private key
+      ansible.builtin.set_fact:
+        wg_private_key_valid: "{{ (wg_private_key | length > 0) and (wg_private_key is match('^[A-Za-z0-9+/]{43}=$')) }}"
+      when: wg_private_key_stat.stat.exists
+
+    - name: Generate server private key if missing or invalid
+      ansible.builtin.command: wg genkey
+      register: wg_private_key
+      changed_when: true
+      when: (not wg_private_key_stat.stat.exists) or (wg_private_key_valid is defined and not wg_private_key_valid)
+
+    - name: Save private key to file
       ansible.builtin.copy:
         dest: "{{ wg_directory }}/{{ wg_interface }}.key"
         content: "{{ wg_private_key.stdout }}\n"
         owner: root
         group: root
         mode: "0600"
-      when: wg_private_key is changed
+      when:
+        - (not wg_private_key_stat.stat.exists) or (wg_private_key_valid is defined and not wg_private_key_valid)
+        - wg_private_key is defined
+        - wg_private_key.stdout is defined
+        - wg_private_key.stdout | length > 0
+      no_log: true
 
+    # COMMENT 1.0: I don't like that these two tasks are repetitive
+    - name: Read private key
+      ansible.builtin.slurp:
+        src: "{{ wg_directory }}/{{ wg_interface }}.key"
+      register: wg_private_key_slurp
+
+    - name: Decode private key
+      ansible.builtin.set_fact:
+        wg_private_key: "{{ wg_private_key_slurp.content | b64decode }}"
+    
     - name: Generate server public key
       ansible.builtin.command: "wg pubkey"
       register: wg_public_key
       args:
-        stdin: "{{ lookup('file', wg_directory ~ '/' ~ wg_interface ~ '.key') }}"
-        creates: "{{ wg_directory }}/{{ wg_interface }}.pub"
+        stdin: "{{ wg_private_key }}"
 
     - name: Save server public key
       ansible.builtin.copy:
@@ -55,7 +90,8 @@
         owner: root
         group: root
         mode: "0644"
-      when: wg_public_key is changed
+      when: wg_public_key.stdout | length > 0
+      no_log: true
 
     - name: Enable IPv4 forwarding
       ansible.builtin.copy:
@@ -73,8 +109,6 @@
         owner: root
         group: root
         mode: "0600"
-      vars:
-        wg_private_key: "{{ (wg_private_key.stdout }}"
       notify: Restart wireguard
 
     - name: Enable and start WireGuard
