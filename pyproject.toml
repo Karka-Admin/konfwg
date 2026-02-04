@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "konfwg"
+version = "0.1.0"
+description = "On-demand WireGuard peer management tool"
+readme = "README.md"
+requires-python = ">= 3.11"
+license = { file = "LICENSE" }
+
+authors = [
+    { name = "Karolis Riaubūnas" }
+]
+
+dependencies = [
+    "typer >= 0.21"
+]
+
+[project.scripts]
+konfwg = "cli.main:app"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

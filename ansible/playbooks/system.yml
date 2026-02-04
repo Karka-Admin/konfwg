@@ -1,6 +1,5 @@
-- name: Install all required packages
+- name: Prepare system for konfwg
   hosts: local
-  remote_user: root
   become: true
 
   tasks:
@@ -13,7 +12,6 @@
           - iproute2
           - iptables
           - net-tools
-          - ufw
           # FastAPI and python
           - python3
           - python3-venv
@@ -27,8 +25,17 @@
           # Caddy and certificates
           - caddy
           - ca-certificates
-          # General dev
+          # Additional
           - git
           - jq
           - qrencode
+          # System
+          - sudo
         state: present
+
+    - name: Enable IPv4 forwarding (needed for routing/NAT)
+      ansible.builtin.sysctl:
+        name: net.ipv4.ip_forward
+        value: "1"
+        state: present
+        reload: true
