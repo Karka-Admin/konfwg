@@ -1,0 +1,12 @@
+<!doctype html>
+<html>
+  <body>
+    <h2>KonfWG</h2>
+    {% if error %}<p style="color:red">{{ error }}</p>{% endif %}
+    <form method="post" action="/conf/{{ token }}/login">
+      <label>Password:</label>
+      <input type="password" name="password" required />
+      <button type="submit">Login</button>
+    </form>
+  </body>
+</html>
