@@ -1,12 +1,41 @@
-from __future__ import annotations
-
 import subprocess
 
 def wg_genkey() -> str:
-    return subprocess.check_output(["wg", "genkey"], text=True).strip()
+    """
+    Generate a WireGuard private key using `wg genkey`.
+    Returns the key as a base64 string.
+    """
+    result = subprocess.run(
+        ["wg", "genkey"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
 
 def wg_pubkey(private_key: str) -> str:
-    return subprocess.check_output(["wg", "pubkey"], input=private_key, text=True).strip()
+    """
+    Derive a public key from a private key using `wg pubkey`.
+    """
+    result = subprocess.run(
+        ["wg", "pubkey"],
+        input=private_key,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
 
 def wg_genpsk() -> str:
-    return subprocess.check_output(["wg", "genpsk"], text=True).strip()
+    """
+    Generate a WireGuard preshared key using `wg genpsk`.
+    """
+    result = subprocess.run(
+        ["wg", "genpsk"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
