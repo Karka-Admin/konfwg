@@ -4,6 +4,7 @@ import hashlib
 import hmac
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Union
 
 from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import FileResponse
@@ -11,27 +12,33 @@ from fastapi.templating import Jinja2Templates
 
 from konfwg.database.engine import SessionLocal
 from konfwg.database.models import Site
+from konfwg.config import configuration
 
 app = FastAPI(title="konfwg")
 
 BASE_PATH = Path(__file__).resolve().parent
-TMP_ROOT = Path("/var/lib/konfwg/tmp")
-
 templates = Jinja2Templates(directory=str(BASE_PATH / "templates"))
 
-def utc_now() -> datetime:
+def get_expiration_date(value: Union[str, datetime]) -> datetime:
     """
-    Returns global time, not tied to the server's or client's local timezone
+    Normalize expires_at to a timezone-aware UTC datetime, using stdlib only.
+    Accepts:
+      - ISO strings (with +00:00 or Z)
+      - datetime (naive or tz-aware)
     """
-    return datetime.now(timezone.utc)
+    if isinstance(value, str):
+        # Support Zulu timestamps if they exist in your DB/API
+        value = value.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(value)
+    else:
+        dt = value
 
-def parse_iso(value: str) -> datetime:
-    """
-    Converts Zulu time to Python's datetime object
-    """
-    if value.endswith("Z"):
-        value = value[:-1] + "+00:00"
-    return datetime.fromisoformat(value)
+    # Ensure tz-aware
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+
+    # Normalize to UTC
+    return dt.astimezone(timezone.utc)
 
 def sha256_hex(value: str) -> str:
     """
@@ -53,7 +60,9 @@ def get_site(token: str) -> Site:
         if int(site.revoked) == 1:
             raise HTTPException(status_code=410, detail="Revoked")
 
-        if utc_now() >= parse_iso(site.expires_at):
+        expires_at = get_expiration_date(site.expires_at)
+        now = datetime.now(timezone.utc)
+        if now >= expires_at:
             site.revoked = 1
             database.commit()
             raise HTTPException(status_code=410, detail="Expired")
@@ -97,7 +106,7 @@ def download(token: str, password: str = Form(...)):
     site = get_site(token)
     verify_password(site, password)
 
-    p = TMP_ROOT / token / "peer.conf"
+    p = configuration.TMP_PATH / token / "peer.conf"
     if not p.exists():
         raise HTTPException(status_code=404, detail="Config missing")
     return FileResponse(str(p), media_type="text/plain", filename="wg.conf")
@@ -107,7 +116,7 @@ def qr(token: str, password: str = Form(...)):
     site = get_site(token)
     verify_password(site, password)
 
-    p = TMP_ROOT / token / "peer.png"
+    p = configuration.TMP_PATH / token / "peer.png"
     if not p.exists():
         raise HTTPException(status_code=404, detail="QR missing")
     return FileResponse(str(p), media_type="image/png")

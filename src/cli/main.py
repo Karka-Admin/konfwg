@@ -1,47 +1,14 @@
 import typer
-import subprocess
-import sys
-import time
 import secrets
-import urllib.request
-from pathlib import Path
 from datetime import datetime, timezone, timedelta
-from urllib.error import URLError
 
 from konfwg.database.engine import SessionLocal
-from konfwg.database.models import Site
-from konfwg.web.app import sha256_hex, utc_now, parse_iso
+from konfwg.database.models import Site, Peer
+from konfwg.web.app import sha256_hex, get_expiration_date
 from konfwg.config import configuration
+from konfwg.initialize import initialize
 
 app = typer.Typer(no_args_is_help=True)
-
-TMP_PATH = Path("/var/lib/konfwg/tmp")
-
-def web_running() -> bool:
-    try:
-        urllib.request.urlopen("http://127.0.0.1:8000/health", timeout=1)
-        return True
-    except URLError:
-        return False
-
-def ensure_web():
-    if web_running():
-        return
-
-    print("Starting konfwg web server...")
-    subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "konfwg.web.app:app", "--host", "127.0.0.1", "--port", "8000"],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
-    )
-
-    for i in range(10):
-        if web_running():
-            print("Web server started.")
-            return
-        time.sleep(0.5)
-    print("Warning: Web server may not have started correctly.")
 
 @app.command()
 def status():
@@ -77,27 +44,28 @@ def add(peer: str):
     
     Starts up the web server if not running yet.
     Generates a token, password and get the current time
-    Creates a database row
+    Creates a database row for site and peer
     """
-    ensure_web()
+    initialize()
 
     token = secrets.token_urlsafe(24)
     password = secrets.token_urlsafe(12)
     time_now = datetime.now(timezone.utc)
-    expires_at = parse_iso(utc_now + timedelta(minutes=15))
-    
-    # TODO: replace with real peer_id
-    peer_id = 1
+    expires_at = time_now + timedelta(minutes=15)
     
     database = SessionLocal()
     try:
+        peer = Peer(
+            interface_id=1
+        )
+
         site = Site(
-            peer_id=peer_id,
+            peer_id=1, # TODO: REPLACE WITH REAL PEER ID
             token=token,
             password=sha256_hex(password),
-            expires_at=expires_at,
+            expires_at=expires_at.isoformat(),
             revoked=0,
-            created_at=parse_iso(utc_now),
+            created_at=time_now.isoformat(),
             last_access_at=None,
         )
         database.add(site)
@@ -110,7 +78,7 @@ def add(peer: str):
     #(directory / "peer.conf").write_text(f"# temp config for {peer}\n", encoding="utf-8")
     #(directory / "peer.png").touch()
     
-    print(f"URL: {configuration.base_url}/conf/{token}")
+    print(f"URL: {configuration.BASE_URL}/conf/{token}")
     print(f"Password: {password}")
     print("Expires in 15 minutes.")
 
