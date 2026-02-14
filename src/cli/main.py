@@ -35,30 +35,36 @@ def show(argument: str):
     interfaces
     sites
     """
-    if argument == "config":
-        for setting in configuration:
-            print(setting)
-    elif argument == "peers":
+    print()
+    database = None
+    try:
         database = DBController()
-        peers = database.get_peers()
-        for peer in peers:
-            print(peer)
-    elif argument == "interfaces":
-        database = DBController()
-        interfaces = database.get_interfaces()
-        for interface in interfaces:
-            print(interface)
-    elif argument == "sites":
-        database = DBController()
-        sites = database.get_sites()
-        for site in sites:
-            print(site)
-    else:
-        print("ERROR: Argument not found!")
-        return
+        if argument == "config":
+            for setting in configuration:
+                print(setting)
+        elif argument == "peers":
+            peers = database.get_peers()
+            for peer in peers:
+                print(peer)
+        elif argument == "interfaces":
+            interfaces = database.get_interfaces()
+            for interface in interfaces:
+                print(interface)
+        elif argument == "sites":
+            sites = database.get_sites()
+            for site in sites:
+                print(site)
+        else:
+            print("ERROR: Argument not found!")
+    except Exception:
+        raise
+    finally:
+        if database is not None:
+            database.close()
+    print()
 
 @app.command()
-def add(name: str, interface: str = "wg0"):
+def add_peer(name: str, interface: str = "wg0"):
     """
     Creates a new peer.
     """
@@ -100,7 +106,7 @@ def add(name: str, interface: str = "wg0"):
         )
 
         database.commit()
-    except:
+    except Exception:
         database.rollback()
         raise
     finally:
@@ -112,9 +118,31 @@ def add(name: str, interface: str = "wg0"):
     print(f"The site expires on {expires_at}.\n")
 
 @app.command()
-def update(peer: str):
+def update_peer(peer: str):
     print(f"Updating peer {peer} not implemented yet!")
 
 @app.command()
-def delete(peer: str):
+def delete_peer(peer: str):
     print(f"Deleting peer {peer} not implemented yet!")
+
+@app.command()
+def add_interface(name: str = "wg0", address: str = "10.8.0.1/24", port: int = 51820):
+    database = DBController()
+    try:
+        private_key = wg_genkey()
+        public_key = wg_pubkey(private_key)
+        interface = database.create_interface(
+            name=name,
+            address=address,
+            port=port,
+            private_key=private_key,
+            public_key=public_key,
+            comment="User created interface",
+        )
+        database.commit()
+        print(f"Created: {interface}")
+    except Exception:
+        database.rollback()
+        raise
+    finally:
+        database.close()

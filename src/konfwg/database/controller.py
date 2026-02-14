@@ -28,7 +28,7 @@ class DBController:
     
     # HELPERS
     def get_next_free_ip(interface: Interface) -> str:
-        print("Still working on it.")
+        raise NotImplementedError("get_next_free_ip is not implemented yet.")
         
     # INTERFACE
     ## READ
@@ -61,8 +61,33 @@ class DBController:
         endpoint: Optional[str] = None,
         comment: Optional[str] = None,
     ) -> Interface:
+        if self.get_interface(name):
+            raise ValueError(f"Interface '{name}' already exists.")
         
+        existing_addr = (
+            self.database.query(Interface)
+            .filter(Interface.address == address.strip())
+            .one_or_none()
+        )
 
+        if existing_addr:
+            raise ValueError(f"Interface address '{address}' already exists (interface '{existing_addr.name}').")
+
+        interface = Interface(
+            name=name.strip(),
+            address=address.strip(),
+            port=str(port).strip(),
+            public_key=public_key.strip(),
+            private_key=private_key.strip(),
+            endpoint=endpoint.strip() if endpoint else None,
+            created_at=now_iso(),
+            updated_at=None,
+            comment=comment,
+        )
+
+        self.database.add(interface)
+        self.database.flush()
+        return interface
     
     # PEER
     ## READ
@@ -94,7 +119,7 @@ class DBController:
         private_key: str,
         preshared_key: Optional[str],
         allowed_ips: str,
-        keepalive: Optional[str],
+        keepalive: Optional[int],
         comment: Optional[str] = None
     ) -> Peer:
         peer = Peer(

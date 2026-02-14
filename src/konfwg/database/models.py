@@ -22,7 +22,7 @@ class Interface(Base):
     peers: Mapped[list["Peer"]] = relationship(back_populates="interface")
 
     def __str__(self):
-        return f"{self.interface_id}: {self.name} {self.address}@{self.port}"
+        return f"ID: {self.interface_id}\t| {self.name} {self.address}@{self.port}"
 
 class Peer(Base):
     __tablename__ = "peer"
@@ -44,7 +44,7 @@ class Peer(Base):
     sites: Mapped[list["Site"]] = relationship(back_populates="peer")
     
     def __str__(self):
-        return f"{self.peer_id}: {self.name} {self.allowed_ips} {self.interface_id}"
+        return f"ID: {self.peer_id}\t| {self.name} {self.allowed_ips} {self.interface_id}"
 
 class Site(Base):
     __tablename__ = "site"
@@ -61,7 +61,7 @@ class Site(Base):
     peer: Mapped["Peer"] = relationship(back_populates="sites")
 
     def __str__(self):
-        return f"{self.site_id}: {self.token} {self.peer_id}"
+        return f"ID: {self.site_id}\t| {self.token} {self.peer_id}"
 
 class AuditLog(Base):
     __tablename__ = "audit_log"

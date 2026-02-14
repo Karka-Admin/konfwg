@@ -25,11 +25,7 @@ def ensure_file(path: Path, mode: int | None = None) -> None:
         os.chmod(path, mode)
 
 def ensure_paths() -> None:
-    # directories
-    print("Ensuring paths exist.")
-    
-def init_database() -> None:
-    Base.metadata.create_all(bind=engine)
+    return
 
 def web_running() -> bool:
     try:
@@ -57,6 +53,9 @@ def ensure_web():
         time.sleep(0.5)
     print("Warning: Web server may not have started correctly.")
 
+def init_database() -> None:
+    Base.metadata.create_all(bind=engine)
+    
 def initialize():
     init_database()
     ensure_paths()
