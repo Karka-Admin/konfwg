@@ -158,7 +158,7 @@ ansible-playbook -i inventories/dev/hosts playbooks/site.yml
 
 | Feature    | Development       | Production         |
 | ---------- | ----------------- | ------------------ |
-| Database   | SQLite            | PostgreSQL         |
+| Database   | SQLite            | SQLite             |
 | Deployment | Local/WSL         | Remote VPS         |
 | TLS        | Optional          | Enforced           |
 | Inventory  | `inventories/dev` | `inventories/prod` |
