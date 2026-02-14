@@ -26,7 +26,7 @@ class Peer(Base):
 
     peer_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     interface_id: Mapped[int] = mapped_column(ForeignKey("interface.interface_id"), nullable=False)
-    name: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(Text, unique=False, nullable=False)
     address: Mapped[str] = mapped_column(Text, nullable=False)
     public_key: Mapped[str] = mapped_column(Text, nullable=False)
     private_key: Mapped[str] = mapped_column(Text, nullable=False)
