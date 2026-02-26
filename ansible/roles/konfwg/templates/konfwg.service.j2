@@ -1,0 +1,28 @@
+[Unit]
+Description=konfwg FastAPI-uvicorn server
+After=network.target
+
+[Service]
+Type=simple
+User={{ konfwg_user }}
+Group={{ konfwg_group }}
+WorkingDirectory={{ konfwg_code_path }}
+
+Environment="PYTHONUNBUFFERED=1"
+Environment="KONFWG_ENV=prod"
+{% if konfwg_manage_config | default(true) %}
+Environment="KONFWG_CONFIG={{ konfwg_etc_path }}/konfwg.conf"
+{% endif %}
+
+Restart=always
+RestartSec=2
+
+ExecStart={{ konfwg_code_path }}/.venv/bin/uvicorn konfwg.web.app:app \
+  --host {{ konfwg_uvicorn_host }} \
+  --port {{ konfwg_uvicorn_port }} \
+  --proxy-headers \
+  --forwarded-allow-ips=127.0.0.1
+
+
+[Install]
+WantedBy=multi-user.target

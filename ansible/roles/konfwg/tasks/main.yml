@@ -1,3 +1,16 @@
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      - python3
+      - python3-venv
+      - python3-pip
+    update_cache: true
+
+- name: Create konfwg group
+  ansible.builtin.group:
+    name: "{{ konfwg_group }}"
+    system: true
+
 - name: Create konfwg user
   ansible.builtin.user:
     name: "{{ konfwg_user }}"
@@ -6,6 +19,21 @@
     shell: /usr/sbin/nologin
     create_home: false
     
+- name: Configure konfwg sudo permissions
+  ansible.builtin.copy:
+    dest: "{{ konfwg_sudo_path }}/konfwg"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+    content: |
+      Cmnd_Alias KONFWG = \
+        /usr/bin/wg, \
+        /usr/bin/wg-quick, \
+        /bin/systemctl restart wg-quick@{{ wg_interface }}
+
+      {{ konfwg_user }} ALL=(root) NOPASSWD: KONFWG
+
 - name: Create konfwg directories
   ansible.builtin.file:
     path: "{{ item.path }}"
@@ -27,19 +55,36 @@
     owner: root
     group: "{{ konfwg_group }}"
     mode: "0640"
-  when: konfwg_manage_config | default(true)
 
-- name: Configure konfwg sudo permissions
-  ansible.builtin.copy:
-    dest: "{{ konfwg_sudo_path }}/konfwg"
+- name: Create konfwg systemd unit
+  ansible.builtin.template:
+    src: konfwg.service.j2
+    dest: "{{ konfwg_service_path }}/{{ konfwg_service_name }}"
     owner: root
     group: root
-    mode: "0440"
-    validate: /usr/sbin/visudo -cf %s
-    content: |
-      Cmnd_Alias KONFWG = \
-        /usr/bin/wg, \
-        /usr/bin/wg-quick, \
-        /bin/systemctl restart wg-quick@wg0
+    mode: "0644"
 
-      {{ konfwg_user }} ALL=(root) NOPASSWD: KONFWG
+- name: Enable and start konfwg
+  ansible.builtin.systemd:
+    name: "{{ konfwg_service_name }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Copy konfwg source to server
+  ansible.builtin.copy:
+    src: "{{ konfwg_local_src }}/"
+    dest: "{{ konfwg_code_path }}/"
+    owner: root
+    group: "{{ konfwg_group }}"
+    mode: preserve
+
+- name: Create venv for source
+  ansible.builtin.command:
+    cmd: "python3 -m venv {{ konfwg_code_path }}/.venv"
+    creates: "{{ konfwg_code_path }}/.venv/bin/python"
+  
+- name: Install konfwg into new venv
+  ansible.builtin.command:
+    cmd: "{{ konfwg_code_path }}/.venv/bin/pip install -e ."
+    chdir: "{{ konfwg_code_path }}"

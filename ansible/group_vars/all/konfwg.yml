@@ -3,6 +3,7 @@ konfwg_group: konfwg
 
 konfwg_base_url: "https://vpn.karkasrv.lt"
 konfwg_service_name: "konfwg.service"
+konfwg_service_path: "/etc/systemd/system"
 konfwg_uvicorn_host: "127.0.0.1"
 konfwg_uvicorn_port: 8000
 
@@ -16,5 +17,7 @@ konfwg_sudo_path: /etc/sudoers.d # konfwg sudoers configuration
 
 wg_directory: /etc/wireguard # wireguard directory
 
-konfwg_default_ttl: 900
-konfwg_default_hits: 1
+konfwg_default_ttl: 900 # Time-to-live for a config site
+konfwg_default_hits: 1 # Maximum visits before site is deactivated
+
+konfwg_local_src: ../src/
