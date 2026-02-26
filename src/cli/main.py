@@ -12,6 +12,21 @@ from konfwg.initialize import initialize
 
 app = typer.Typer(no_args_is_help=True)
 
+@app.callback(invoke_without_command=False)
+def root(context: typer.Context, no_init: bool = typer.Option(False, "--no-init", help="Skip initialization checks")):
+    """
+    Callback function that runs everytime you use the tool.
+    For checking initializing and checking if everything is setup correctly.
+
+    Does not run when user just uses --help etc.
+    """
+    if no_init:
+        return
+    if context.resilient_parsing:
+        return
+    
+    initialize()
+
 @app.command()
 def status():
     """

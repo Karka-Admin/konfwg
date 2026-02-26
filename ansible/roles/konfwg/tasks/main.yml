@@ -1,0 +1,45 @@
+- name: Create konfwg user
+  ansible.builtin.user:
+    name: "{{ konfwg_user }}"
+    system: true
+    home: "/nonexistent"
+    shell: /usr/sbin/nologin
+    create_home: false
+    
+- name: Create konfwg directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "{{ konfwg_code_path }}", owner: root, group: "{{ konfwg_group }}", mode: "0750" }
+    - { path: "{{ konfwg_etc_path }}", owner: root, group: "{{ konfwg_group }}", mode: "0750" }
+    - { path: "{{ konfwg_db_path }}", owner: "{{ konfwg_user }}", group: "{{ konfwg_group }}", mode: "0750" }
+    - { path: "{{ konfwg_log_path }}", owner: "{{ konfwg_user }}", group: "{{ konfwg_group }}", mode: "0750" }
+    - { path: "{{ konfwg_tmp_path }}", owner: "{{ konfwg_user }}", group: "{{ konfwg_group }}", mode: "0750" }
+
+- name: Create konfwg configuration file
+  ansible.builtin.template:
+    src: konfwg.conf.j2
+    dest: "{{ konfwg_etc_path }}/konfwg.conf"
+    owner: root
+    group: "{{ konfwg_group }}"
+    mode: "0640"
+  when: konfwg_manage_config | default(true)
+
+- name: Configure konfwg sudo permissions
+  ansible.builtin.copy:
+    dest: "{{ konfwg_sudo_path }}/konfwg"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+    content: |
+      Cmnd_Alias KONFWG = \
+        /usr/bin/wg, \
+        /usr/bin/wg-quick, \
+        /bin/systemctl restart wg-quick@wg0
+
+      {{ konfwg_user }} ALL=(root) NOPASSWD: KONFWG

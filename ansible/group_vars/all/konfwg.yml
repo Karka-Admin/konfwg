@@ -1,0 +1,20 @@
+konfwg_user: konfwg
+konfwg_group: konfwg
+
+konfwg_base_url: "https://vpn.karkasrv.lt"
+konfwg_service_name: "konfwg.service"
+konfwg_uvicorn_host: "127.0.0.1"
+konfwg_uvicorn_port: 8000
+
+konfwg_cli_path: /usr/local/bin # holds konfwg cli command that runs the tool
+konfwg_code_path: /opt/konfwg # konfwg code
+konfwg_etc_path: /etc/konfwg # konfwg secrets
+konfwg_db_path: /var/lib/konfwg # konfwg database
+konfwg_log_path: /var/log/konfwg # konfwg logs
+konfwg_tmp_path: /tmp/konfwg # konfwg temporary files (CURRENTLY UNIMPLEMENTED)
+konfwg_sudo_path: /etc/sudoers.d # konfwg sudoers configuration
+
+wg_directory: /etc/wireguard # wireguard directory
+
+konfwg_default_ttl: 900
+konfwg_default_hits: 1
