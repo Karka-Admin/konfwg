@@ -20,4 +20,4 @@ wg_directory: /etc/wireguard # wireguard directory
 konfwg_default_ttl: 900 # Time-to-live for a config site
 konfwg_default_hits: 1 # Maximum visits before site is deactivated
 
-konfwg_local_src: ../src/
+konfwg_local_src: ~/konfwg/src

@@ -1,0 +1,36 @@
+- name: Install Caddy
+  ansible.builtin.apt:
+    name: caddy
+    update_cache: true
+
+- name: Ensure Caddy sites directory exists
+  ansible.builtin.file:
+    path: "{{ caddy_sites_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Create main Caddyfile
+  ansible.builtin.template:
+    src: Caddyfile.j2
+    dest: "{{ caddy_mainfile }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Validate and reload Caddy
+
+- name: Create konfwg site config
+  ansible.builtin.template:
+    src: konfwg.caddy.j2
+    dest: "{{ caddy_sites_dir }}/{{ caddy_site_name }}.caddy"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Validate and reload Caddy
+
+- name: Ensure Caddy is enabled and running
+  ansible.builtin.systemd:
+    name: caddy
+    enabled: true
+    state: started

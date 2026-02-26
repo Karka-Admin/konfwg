@@ -48,6 +48,25 @@
     - { path: "{{ konfwg_log_path }}", owner: "{{ konfwg_user }}", group: "{{ konfwg_group }}", mode: "0750" }
     - { path: "{{ konfwg_tmp_path }}", owner: "{{ konfwg_user }}", group: "{{ konfwg_group }}", mode: "0750" }
 
+- name: Copy konfwg source to server
+  ansible.builtin.copy:
+    src: "{{ konfwg_local_src }}/"
+    dest: "{{ konfwg_code_path }}/"
+    owner: root
+    group: "{{ konfwg_group }}"
+    mode: preserve
+  notify: Restart konfwg
+
+- name: Create venv for source
+  ansible.builtin.command:
+    cmd: "python3 -m venv {{ konfwg_code_path }}/.venv"
+    creates: "{{ konfwg_code_path }}/.venv/bin/python"
+  
+- name: Install konfwg into new venv
+  ansible.builtin.command:
+    cmd: "{{ konfwg_code_path }}/.venv/bin/pip install -e ."
+    chdir: "{{ konfwg_code_path }}"
+
 - name: Create konfwg configuration file
   ansible.builtin.template:
     src: konfwg.conf.j2
@@ -70,21 +89,3 @@
     enabled: true
     state: started
     daemon_reload: true
-
-- name: Copy konfwg source to server
-  ansible.builtin.copy:
-    src: "{{ konfwg_local_src }}/"
-    dest: "{{ konfwg_code_path }}/"
-    owner: root
-    group: "{{ konfwg_group }}"
-    mode: preserve
-
-- name: Create venv for source
-  ansible.builtin.command:
-    cmd: "python3 -m venv {{ konfwg_code_path }}/.venv"
-    creates: "{{ konfwg_code_path }}/.venv/bin/python"
-  
-- name: Install konfwg into new venv
-  ansible.builtin.command:
-    cmd: "{{ konfwg_code_path }}/.venv/bin/pip install -e ."
-    chdir: "{{ konfwg_code_path }}"

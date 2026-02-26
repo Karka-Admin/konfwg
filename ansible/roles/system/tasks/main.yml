@@ -1,41 +1,36 @@
-- name: Prepare system for konfwg
-  hosts: local
-  become: true
+- name: Install packages
+  ansible.builtin.apt:
+    update_cache: true
+    name:
+      # Wireguard and networking
+      - wireguard
+      - iproute2
+      - iptables
+      - net-tools
+      # FastAPI and python
+      - python3
+      - python3-venv
+      - python3-pip
+      - build-essential
+      - libffi-dev
+      - libssl-dev
+      - curl
+      # SQlite
+      - sqlite3
+      # Caddy and certificates
+      - caddy
+      - ca-certificates
+      # Additional
+      - git
+      - jq
+      - qrencode
+      # System
+      - sudo
+    state: present
 
-  tasks:
-    - name: Install packages
-      ansible.builtin.apt:
-        update_cache: true
-        name:
-          # Wireguard and networking
-          - wireguard
-          - iproute2
-          - iptables
-          - net-tools
-          # FastAPI and python
-          - python3
-          - python3-venv
-          - python3-pip
-          - build-essential
-          - libffi-dev
-          - libssl-dev
-          - curl
-          # SQlite
-          - sqlite3
-          # Caddy and certificates
-          - caddy
-          - ca-certificates
-          # Additional
-          - git
-          - jq
-          - qrencode
-          # System
-          - sudo
-        state: present
-
-    - name: Enable IPv4 forwarding (needed for routing/NAT)
-      ansible.builtin.sysctl:
-        name: net.ipv4.ip_forward
-        value: "1"
-        state: present
-        reload: true
+- name: Enable IPv4 forwarding (needed for routing/NAT)
+  ansible.builtin.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    state: present
+    reload: true
