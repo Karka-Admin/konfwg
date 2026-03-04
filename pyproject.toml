@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "konfwg"
 version = "0.1.0"
-description = "On-demand WireGuard peer management tool"
+description = "WireGuard peer management and configuration tool"
 readme = "README.md"
 requires-python = ">= 3.11"
 license = { file = "LICENSE" }

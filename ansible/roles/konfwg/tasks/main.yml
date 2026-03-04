@@ -1,3 +1,8 @@
+# TODO
+# - Create symlink to /usr/local/bin
+# - Fix permission errors when launching konfwg
+# - Make current user also
+
 - name: Install required packages
   ansible.builtin.apt:
     name:
@@ -48,14 +53,41 @@
     - { path: "{{ konfwg_log_path }}", owner: "{{ konfwg_user }}", group: "{{ konfwg_group }}", mode: "0750" }
     - { path: "{{ konfwg_tmp_path }}", owner: "{{ konfwg_user }}", group: "{{ konfwg_group }}", mode: "0750" }
 
-- name: Copy konfwg source to server
-  ansible.builtin.copy:
-    src: "{{ konfwg_local_src }}/"
+- name: Sync konfwg project to opt
+  ansible.posix.synchronize:
+    src: "{{ konfwg_local_dir }}/"
     dest: "{{ konfwg_code_path }}/"
-    owner: root
+    delete: true
+    rsync_opts:
+      - "--exclude=.git"
+      - "--exclude=.gitignore"
+      - "--exclude=.venv"
+      - "--exclude=venv"
+      - "--exclude=__pycache__"
+      - "--exclude=*.pyc"
+      - "--exclude=*.pyo"
+      - "--exclude=*.pyd"
+      - "--exclude=*.egg-info"
+      - "--exclude=dist"
+      - "--exclude=build"
+      - "--exclude=.mypy_cache"
+      - "--exclude=.pytest_cache"
+      - "--exclude=.ruff_cache"
+      - "--exclude=.coverage"
+      - "--exclude=htmlcov"
+      - "--exclude=.vscode"
+      - "--exclude=.idea"
+      - "--exclude=.DS_Store"
+      - "--exclude=Thumbs.db"
+      - "--exclude=setup.sh"
+
+- name: Copy pyproject.toml
+  ansible.builtin.copy:
+    src: "{{ konfwg_local_dir }}/pyproject.toml"
+    dest: "{{ konfwg_code_path }}/"
+    owner: "{{ konfwg_user }}"
     group: "{{ konfwg_group }}"
-    mode: preserve
-  notify: Restart konfwg
+    mode: "0644"
 
 - name: Create venv for source
   ansible.builtin.command:

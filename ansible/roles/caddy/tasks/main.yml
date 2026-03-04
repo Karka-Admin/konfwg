@@ -27,7 +27,18 @@
     owner: root
     group: root
     mode: "0644"
-  notify: Validate and reload Caddy
+
+- name: Validate caddy
+  become: true
+  block:
+    - name: Validate Caddy config
+      ansible.builtin.command: "caddy validate --config {{ caddy_mainfile }}"
+      changed_when: false
+
+    - name: Reload Caddy
+      ansible.builtin.systemd:
+        name: caddy
+        state: reloaded
 
 - name: Ensure Caddy is enabled and running
   ansible.builtin.systemd:

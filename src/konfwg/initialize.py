@@ -17,18 +17,18 @@ def service_running(name: str) -> bool:
     """
     subprocess.run(["systemctl", "is-active", "--quiet", name]).returncode == 0
 
-def ensure_service():
+def ensure_service() -> None:
     """
-    Ensures that konfwg.service (web server fastapi + uvicorn) is started before using the tool.
+    Checks if konfwg.service (web server fastapi + uvicorn) is started before using the tool.
     """
     if service_running("konfwg.service"):
         return
-    print("Starting konfwg.service.")
-    subprocess.run(["systemctl", "start", "konfwg.service"], check=True)
+    raise RuntimeError(
+        "konfwg.service is not running. Start it with: sudo systemctl start konfwg.service"
+    )
 
 
 def initialize():
-    ensure_service()
     init_database()
 
  #verify configuration
