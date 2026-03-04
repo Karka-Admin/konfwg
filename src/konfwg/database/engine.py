@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from konfwg.config import configuration
 
 def database_url() -> str:
-    return f"sqlite:///{configuration.DB_PATH}"
+    return f"sqlite:///{configuration.DB_PATH}/konfwg.db"
 
 engine = create_engine(
     database_url(),
