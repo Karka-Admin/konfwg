@@ -31,7 +31,7 @@ def check_site_validity(token: str) -> Site:
 
 @app.get("/conf/{token}")
 async def get_login(request: Request, token: str):
-    site = check_site_validity()
+    site = check_site_validity(token)
 
     return templates.TemplateResponse(
         request=request,

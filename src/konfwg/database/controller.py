@@ -91,7 +91,7 @@ class DBController:
     
     # PEER
     ## READ
-    def get_peer(self, name: str) -> Optional[Peer]:
+    def get_peer_by_name(self, name: str) -> Optional[Peer]:
         """
         Returns a specific peer based on name
         
@@ -101,6 +101,12 @@ class DBController:
         :rtype: Peer | None
         """
         return self.database.query(Peer).filter(Peer.name == name).one_or_none()
+    
+    def get_peers_by_interface(self, interface_id: int) -> Optional[Peer]:
+        """
+        Returns a specific peer based on interface
+        """
+        return self.database.query(Peer).filter(Peer.interface_id == interface_id).all()
     
     def get_peers(self):
         """

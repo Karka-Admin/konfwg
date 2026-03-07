@@ -3,10 +3,10 @@ import secrets
 from datetime import datetime, timezone, timedelta
 
 from konfwg.database.controller import DBController
-
 from konfwg.wg.commands import wg_genkey, wg_genpsk, wg_pubkey
-
 from konfwg.config import configuration
+from konfwg.security import *
+from konfwg.network import *
 from konfwg.initialize import initialize
 
 app = typer.Typer(no_args_is_help=True)
@@ -82,49 +82,49 @@ def add_peer(name: str, interface: str = "wg0"):
     """
     Creates a new peer.
     """
-    initialize()
-
-    token = secrets.token_urlsafe(24)
-    password = secrets.token_urlsafe(12)
-    now = datetime.now(timezone.utc)
-    expires_at = now + timedelta(minutes=15)
-    database = DBController()
-
+    db = DBController()
     try:
-        iface = database.get_interface(interface)
+        iface = db.get_interface(interface)
         if not iface:
             raise typer.BadParameter(f"Interface '{interface}' not found.")
+        
+        name = name.strip()
+        if not name:
+            raise typer.BadParameter("Peer name cannot be empty.")
 
+        password = generate_password()
+        peers = db.get_peers_by_interface(iface.interface_id)
+        address = get_free_ip(iface, peers)
         private_key = wg_genkey()
         public_key = wg_pubkey(private_key)
         preshared_key = wg_genpsk()
-        address = "10.8.0.2/32"
-        allowed_ips = address
-        
-        peer = database.create_peer(
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
+        token=generate_url_token()
+
+        peer = db.create_peer(
             interface=iface,
             name=name,
             address=address,
             public_key=public_key,
             private_key=private_key,
             preshared_key=preshared_key,
-            allowed_ips=allowed_ips,
+            allowed_ips=address,
             keepalive=25,
         )
         
-        site = database.create_site(
+        db.create_site(
             peer=peer,
             token=token,
-            password=sha256_hex(password),
+            password=hash_password(password),
             expires_at=expires_at.isoformat(),
         )
-
-        database.commit()
+        
+        db.commit()
     except Exception:
-        database.rollback()
+        db.rollback()
         raise
-    finally:
-        database.close()
+    finally: 
+        db.close()
 
     print(f"\nNew peer {name} has been created successfully.")
     print(f"Configuration is accessible via: {configuration.BASE_URL}/conf/{token}")
@@ -141,11 +141,11 @@ def delete_peer(peer: str):
 
 @app.command()
 def add_interface(name: str = "wg0", address: str = "10.8.0.1/24", port: int = 51820):
-    database = DBController()
+    db = DBController()
     try:
         private_key = wg_genkey()
         public_key = wg_pubkey(private_key)
-        interface = database.create_interface(
+        interface = db.create_interface(
             name=name,
             address=address,
             port=port,
@@ -153,10 +153,10 @@ def add_interface(name: str = "wg0", address: str = "10.8.0.1/24", port: int = 5
             public_key=public_key,
             comment="User created interface",
         )
-        database.commit()
+        db.commit()
         print(f"Created: {interface}")
     except Exception:
-        database.rollback()
+        db.rollback()
         raise
     finally:
-        database.close()
+        db.close()

@@ -15,7 +15,7 @@ def service_running(name: str) -> bool:
     """
     Helper returns true if specified service is running.
     """
-    subprocess.run(["systemctl", "is-active", "--quiet", name]).returncode == 0
+    return subprocess.run(["systemctl", "is-active", "--quiet", name]).returncode == 0
 
 def ensure_service() -> None:
     """
@@ -27,12 +27,5 @@ def ensure_service() -> None:
         "konfwg.service is not running. Start it with: sudo systemctl start konfwg.service"
     )
 
-
 def initialize():
     init_database()
-
- #verify configuration
- #check permissions
- #verify wireguard exists
- #verify caddy exists
- #sanity checks
