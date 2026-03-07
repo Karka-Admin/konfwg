@@ -61,7 +61,7 @@ class Site(Base):
     peer: Mapped["Peer"] = relationship(back_populates="sites")
 
     def __str__(self):
-        return f"ID: {self.site_id}\t| {self.token} {self.peer_id}"
+        return f"ID: {self.site_id}\t| {self.peer_id} {self.token} {self.expires_at} {self.revoked} {self.created_at} {self.last_access_at}"
 
 class AuditLog(Base):
     __tablename__ = "audit_log"

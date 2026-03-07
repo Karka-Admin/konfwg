@@ -1,35 +1,44 @@
 from __future__ import annotations
 
-import secrets
-
+from datetime import datetime, timezone
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.templating import Jinja2Templates
-
-from passlib.context import CryptContext
-
 from konfwg.config import configuration
-
-from konfwg.database import controller
+from konfwg.database.controller import DBController
 from konfwg.database.models import Site
 
 app = FastAPI(title="konfwg")
 templates = Jinja2Templates(directory=str(configuration.CODE_PATH / "src" / "konfwg" / "web" / "templates"))
-pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto") # STILL NOT USED
 
-# HELPERS
-def get_valid_site(token: str) -> Site | None:
+def check_site_validity(token: str) -> Site:
+    db = DBController()
+    try:
+        site = db.get_site(token)
+        if site is None:
+            raise HTTPException(status_code=404, detail="Page not found")
+        if site.revoked:
+            raise HTTPException(status_code=404, detail="Page not found")
 
-# WORK IN PROGRESS
+        expires_at = datetime.fromisoformat(site.expires_at)
+        now = datetime.now(timezone.utc)
+        if expires_at <= now:
+            site.revoked = True
+            db.commit()
+            raise HTTPException(status_code=404, detail="Page not found")
+        return site
+    finally:
+        db.close()
+
 @app.get("/conf/{token}")
 async def get_login(request: Request, token: str):
-
-
+    site = check_site_validity()
 
     return templates.TemplateResponse(
         request=request,
         name="login.html",
         context={
             "token": token,
+            "site": site,
         },
     )
 

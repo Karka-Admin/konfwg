@@ -6,7 +6,6 @@ from konfwg.database.controller import DBController
 
 from konfwg.wg.commands import wg_genkey, wg_genpsk, wg_pubkey
 
-from konfwg.web.app import sha256_hex, get_expiration_date
 from konfwg.config import configuration
 from konfwg.initialize import initialize
 

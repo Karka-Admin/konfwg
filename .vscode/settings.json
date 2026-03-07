@@ -1,3 +1,50 @@
 {
-    "ansible.python.interpreterPath": "/usr/bin/python3"
+  "ansible.python.interpreterPath": "/usr/bin/python3",
+  "python.analysis.languageServerMode": "light",
+  "python.analysis.indexing": false,
+  "python.analysis.userFileIndexingLimit": 200,
+  "python.analysis.autoImportCompletions": false,
+  "python.analysis.useLibraryCodeForTypes": false,
+
+  "python.analysis.exclude": [
+    "**/.venv",
+    "**/__pycache__",
+    "**/.git",
+    "**/.mypy_cache",
+    "**/.pytest_cache",
+    "**/node_modules",
+    "**/dist",
+    "**/build",
+    "**/.ansible",
+    "**/tmp",
+    "**/logs"
+  ],
+
+  "files.watcherExclude": {
+    "**/.git/**": true,
+    "**/.venv/**": true,
+    "**/__pycache__/**": true,
+    "**/.mypy_cache/**": true,
+    "**/.pytest_cache/**": true,
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/tmp/**": true,
+    "**/logs/**": true
+  },
+
+  "search.exclude": {
+    "**/.git": true,
+    "**/.venv": true,
+    "**/__pycache__": true,
+    "**/.mypy_cache": true,
+    "**/.pytest_cache": true,
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/tmp": true,
+    "**/logs": true
+  },
+
+  "python.testing.autoTestDiscoverOnSaveEnabled": false
 }
