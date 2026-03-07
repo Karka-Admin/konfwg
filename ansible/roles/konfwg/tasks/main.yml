@@ -94,6 +94,41 @@
     cmd: "{{ konfwg_code_path }}/.venv/bin/pip install -e ."
     chdir: "{{ konfwg_code_path }}"
 
+- name: Check if konfwg config exists
+  ansible.builtin.stat:
+    path: "{{ konfwg_etc_path }}/konfwg.conf"
+  register: konfwg_conf_stat
+
+- name: Read existing konfwg config
+  ansible.builtin.slurp:
+    path: "{{ konfwg_etc_path }}/konfwg.conf"
+  register: konfwg_conf_raw
+  when: konfwg_conf_stat.stat.exists
+
+- name: Set effective secret
+  ansible.builtin.set_fact:
+    konfwg_secret: >-
+      {{
+        (
+          (
+            konfwg_conf_raw.content
+            | b64decode
+            | regex_findall('(?m)^SECRET=(.+)$')
+            | first
+          )
+          if (
+            konfwg_conf_stat.stat.exists and
+            (
+              konfwg_conf_raw.content
+              | b64decode
+              | regex_findall('(?m)^SECRET=(.+)$')
+              | length
+            ) > 0
+          )
+          else lookup('ansible.builtin.password', '/dev/null length=64 chars=ascii_letters,digits')
+        )
+      }}
+
 - name: Create konfwg configuration file
   ansible.builtin.template:
     src: konfwg.conf.j2

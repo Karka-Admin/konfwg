@@ -26,6 +26,7 @@ class Configuration(BaseSettings):
 
     DEFAULT_TTL: int = 900
     DEFAULT_HITS: int = 1
+    SECRET: str
 
     model_config = SettingsConfigDict(env_file="/etc/konfwg/konfwg.conf")
 
