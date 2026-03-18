@@ -329,132 +329,132 @@ class DBController:
     ##############
     #### SITE ####
     ##############
-def create_site(self, *, peer: Peer, token: str, password: str, expires_at: datetime) -> Site:
-    """
-    Creates a site.
-    """
-    token = token.strip()
-    password = password.strip()
-
-    if peer.peer_id is None:
-        raise ValueError("Peer must be persisted before creating a site.")
-    if not token:
-        raise ValueError("Site token cannot be empty.")
-    if not password:
-        raise ValueError("Site password cannot be empty.")
-    if expires_at.tzinfo is None:
-        raise ValueError("Site expires_at must be timezone-aware.")
-
-    existing_site = self.get_site_by_token(token)
-    if existing_site:
-        raise ValueError(f"Site token '{token}' already exists.")
-
-    site = Site(
-        peer_id=peer.peer_id,
-        token=token,
-        password=password,
-        expires_at=expires_at,
-        revoked=False,
-        created_at=now_utc(),
-        last_access_at=None,
-    )
-    self.database.add(site)
-    self.database.flush()
-    return site
-
-def get_site_by_id(self, site_id: int) -> Optional[Site]:
-    """
-    Returns a specific site based on id.
-    """
-    return self.database.query(Site).filter(Site.site_id == site_id).one_or_none()
-
-def get_site_by_token(self, token: str) -> Optional[Site]:
-    """
-    Returns a specific site based on token.
-    """
-    return self.database.query(Site).filter(Site.token == token.strip()).one_or_none()
-
-def get_site_by_peer_id(self, peer_id: int) -> Optional[Site]:
-    """
-    Returns the first site for a specific peer.
-    """
-    return self.database.query(Site).filter(Site.peer_id == peer_id).first()
-
-def list_sites_by_peer_id(self, peer_id: int) -> list[Site]:
-    """
-    Returns all sites for a specific peer.
-    """
-    return self.database.query(Site).filter(Site.peer_id == peer_id).all()
-
-def list_sites(self) -> list[Site]:
-    """
-    Returns all sites.
-    """
-    return self.database.query(Site).all()
-
-def update_site(self, site_id: int, *, token: str | None = None, password: str | None = None, expires_at: datetime | None = None, revoked: bool | None = None, last_access_at: datetime | None = None) -> Site:
-    """
-    Updates a site.
-    """
-    site = self.get_site_by_id(site_id)
-    if site is None:
-        raise ValueError(f"Site with id '{site_id}' not found.")
-
-    if token is not None:
+    def create_site(self, *, peer: Peer, token: str, password: str, expires_at: datetime) -> Site:
+        """
+        Creates a site.
+        """
         token = token.strip()
+        password = password.strip()
+
+        if peer.peer_id is None:
+            raise ValueError("Peer must be persisted before creating a site.")
         if not token:
             raise ValueError("Site token cannot be empty.")
-        existing = self.get_site_by_token(token)
-        if existing and existing.site_id != site_id:
-            raise ValueError(f"Site token '{token}' already exists.")
-        site.token = token
-
-    if password is not None:
-        password = password.strip()
         if not password:
             raise ValueError("Site password cannot be empty.")
-        site.password = password
-
-    if expires_at is not None:
         if expires_at.tzinfo is None:
             raise ValueError("Site expires_at must be timezone-aware.")
-        site.expires_at = expires_at
 
-    if revoked is not None:
-        site.revoked = revoked
+        existing_site = self.get_site_by_token(token)
+        if existing_site:
+            raise ValueError(f"Site token '{token}' already exists.")
 
-    if last_access_at is not None:
-        if last_access_at.tzinfo is None:
-            raise ValueError("Site last_access_at must be timezone-aware.")
-        site.last_access_at = last_access_at
+        site = Site(
+            peer_id=peer.peer_id,
+            token=token,
+            password=password,
+            expires_at=expires_at,
+            revoked=False,
+            created_at=now_utc(),
+            last_access_at=None,
+        )
+        self.database.add(site)
+        self.database.flush()
+        return site
 
-    self.database.flush()
-    return site
+    def get_site_by_id(self, site_id: int) -> Optional[Site]:
+        """
+        Returns a specific site based on id.
+        """
+        return self.database.query(Site).filter(Site.site_id == site_id).one_or_none()
 
-def delete_site_by_id(self, site_id: int) -> None:
-    """
-    Deletes a site by id.
-    """
-    site = self.get_site_by_id(site_id)
-    if site is None:
-        raise ValueError(f"Site with id '{site_id}' not found.")
-    self.database.delete(site)
-    self.database.flush()
+    def get_site_by_token(self, token: str) -> Optional[Site]:
+        """
+        Returns a specific site based on token.
+        """
+        return self.database.query(Site).filter(Site.token == token.strip()).one_or_none()
 
-def delete_site_by_token(self, token: str) -> None:
-    """
-    Deletes a site by token.
-    """
-    site = self.get_site_by_token(token)
-    if site is None:
-        raise ValueError(f"Site with token '{token}' not found.")
-    self.database.delete(site)
-    self.database.flush()
+    def get_site_by_peer_id(self, peer_id: int) -> Optional[Site]:
+        """
+        Returns the first site for a specific peer.
+        """
+        return self.database.query(Site).filter(Site.peer_id == peer_id).first()
 
-def revoke_site_by_token(self, token: str) -> Site:
-    site = self.get_site_by_token(token)
-    if site is None:
-        raise ValueError(f"Site with token '{token}' not found.")
-    site.revoked = True
-    self.database.flush()
-    return site
+    def list_sites_by_peer_id(self, peer_id: int) -> list[Site]:
+        """
+        Returns all sites for a specific peer.
+        """
+        return self.database.query(Site).filter(Site.peer_id == peer_id).all()
+
+    def list_sites(self) -> list[Site]:
+        """
+        Returns all sites.
+        """
+        return self.database.query(Site).all()
+
+    def update_site(self, site_id: int, *, token: str | None = None, password: str | None = None, expires_at: datetime | None = None, revoked: bool | None = None, last_access_at: datetime | None = None) -> Site:
+        """
+        Updates a site.
+        """
+        site = self.get_site_by_id(site_id)
+        if site is None:
+            raise ValueError(f"Site with id '{site_id}' not found.")
+
+        if token is not None:
+            token = token.strip()
+            if not token:
+                raise ValueError("Site token cannot be empty.")
+            existing = self.get_site_by_token(token)
+            if existing and existing.site_id != site_id:
+                raise ValueError(f"Site token '{token}' already exists.")
+            site.token = token
+
+        if password is not None:
+            password = password.strip()
+            if not password:
+                raise ValueError("Site password cannot be empty.")
+            site.password = password
+
+        if expires_at is not None:
+            if expires_at.tzinfo is None:
+                raise ValueError("Site expires_at must be timezone-aware.")
+            site.expires_at = expires_at
+
+        if revoked is not None:
+            site.revoked = revoked
+
+        if last_access_at is not None:
+            if last_access_at.tzinfo is None:
+                raise ValueError("Site last_access_at must be timezone-aware.")
+            site.last_access_at = last_access_at
+
+        self.database.flush()
+        return site
+
+    def delete_site_by_id(self, site_id: int) -> None:
+        """
+        Deletes a site by id.
+        """
+        site = self.get_site_by_id(site_id)
+        if site is None:
+            raise ValueError(f"Site with id '{site_id}' not found.")
+        self.database.delete(site)
+        self.database.flush()
+
+    def delete_site_by_token(self, token: str) -> None:
+        """
+        Deletes a site by token.
+        """
+        site = self.get_site_by_token(token)
+        if site is None:
+            raise ValueError(f"Site with token '{token}' not found.")
+        self.database.delete(site)
+        self.database.flush()
+
+    def revoke_site_by_token(self, token: str) -> Site:
+        site = self.get_site_by_token(token)
+        if site is None:
+            raise ValueError(f"Site with token '{token}' not found.")
+        site.revoked = True
+        self.database.flush()
+        return site

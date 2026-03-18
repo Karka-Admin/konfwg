@@ -120,11 +120,11 @@ def render_client_config_from_token(*, db: DBController, token: str) -> str:
     ctx = ClientConfigContext(
         client_private_key=peer.private_key,
         client_address=normalize_client_address(peer.address),
-        client_dns=None,
+        client_dns="1.1.1.1",
         server_public_key=interface.public_key,
         preshared_key=peer.preshared_key,
         server_endpoint=derive_server_endpoint(interface),
-        allowed_ips="0.0.0.0/0, ::/0",
+        allowed_ips="0.0.0.0/0",
         persistent_keepalive=int(peer.keepalive or 25),
     )
 

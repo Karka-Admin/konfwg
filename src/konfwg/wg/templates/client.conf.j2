@@ -2,7 +2,7 @@
 PrivateKey = {{ client_private_key }}
 Address = {{ client_address }}
 {% if client_dns %}
-DNS = {{ client_dns }}
+DNS = {{ client_dns | default("1.1.1.1") }}
 {% endif %}
 
 [Peer]

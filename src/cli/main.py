@@ -123,7 +123,6 @@ def add_peer(name: str, iface_name: str = typer.Option("wg0", "--iface", help="I
         db.close()
 
     write_client_bundle(token=token)
-    wg_restart(iface_name)
 
     print(f"\nNew peer {name} has been created successfully.")
     print(f"Configuration is accessible via: {configuration.BASE_URL}/conf/{token}")
