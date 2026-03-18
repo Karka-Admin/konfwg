@@ -39,3 +39,19 @@ def wg_genpsk() -> str:
         text=True,
     )
     return result.stdout.strip()
+
+def wg_quick_down(interface: str) -> None:
+    subprocess.run(["wg-quick", "down", interface])
+
+def wg_quick_up(interface: str) -> None:
+    subprocess.run(["wg-quick", "up", interface])
+
+def wg_restart(interface: str) -> None:
+    """
+    Full restart WireGuard interface.
+    """
+    try:
+        wg_quick_down(interface)
+    except subprocess.CalledProcessError:
+        pass
+    wg_quick_up(interface)

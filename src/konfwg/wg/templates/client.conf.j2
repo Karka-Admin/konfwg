@@ -1,0 +1,15 @@
+[Interface]
+PrivateKey = {{ client_private_key }}
+Address = {{ client_address }}
+{% if client_dns %}
+DNS = {{ client_dns }}
+{% endif %}
+
+[Peer]
+PublicKey = {{ server_public_key }}
+{% if server_preshared_key %}
+PresharedKey = {{ server_preshared_key }}
+{% endif %}
+AllowedIPs = {{ allowed_ips }}
+Endpoint = {{ server_endpoint }}
+PersistentKeepalive = {{ persistent_keepalive }}

@@ -4,18 +4,287 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>konfwg login</title>
+    <style>
+        :root {
+            --bg: #111315;
+            --panel: #1a1d21;
+            --panel-soft: #20242a;
+            --border: #31363d;
+            --text: #f2f4f7;
+            --muted: #9aa3ad;
+            --accent: #f4c542;
+            --accent-soft: rgba(244, 197, 66, 0.12);
+            --danger: #ff7b72;
+            --shadow: 0 18px 50px rgba(0, 0, 0, 0.4);
+            --radius: 18px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(244, 197, 66, 0.08), transparent 24%),
+                linear-gradient(180deg, #0e1012 0%, #14171a 100%);
+            color: var(--text);
+        }
+
+        body {
+            display: grid;
+            place-items: center;
+            padding: 20px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 440px;
+            background: rgba(26, 29, 33, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            padding: 32px;
+        }
+
+        .top {
+            margin-bottom: 28px;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        .brand-mark {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, #2a2f36 0%, #1b1f24 100%);
+            border: 1px solid rgba(244, 197, 66, 0.18);
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .brand-text strong {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-text span {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: var(--accent-soft);
+            border: 1px solid rgba(244, 197, 66, 0.14);
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 18px;
+        }
+
+        .tag-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: var(--accent);
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+        }
+
+        .subtitle {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        .error {
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(255, 123, 114, 0.08);
+            border: 1px solid rgba(255, 123, 114, 0.16);
+            color: #ffd2cf;
+            font-size: 13px;
+        }
+
+        .field {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #d8dde4;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        input[type="password"] {
+            width: 100%;
+            height: 52px;
+            padding: 0 15px 0 44px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background: #121417;
+            color: var(--text);
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        input[type="password"]::placeholder {
+            color: #7f8893;
+        }
+
+        input[type="password"]:focus {
+            border-color: rgba(244, 197, 66, 0.55);
+            box-shadow: 0 0 0 4px rgba(244, 197, 66, 0.10);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8b949e;
+            font-size: 15px;
+            pointer-events: none;
+        }
+
+        .hint {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .button {
+            width: 100%;
+            height: 52px;
+            border: 0;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #ffd45f 0%, #f4c542 100%);
+            color: #17191b;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.12s ease, filter 0.18s ease, box-shadow 0.18s ease;
+            box-shadow: 0 10px 26px rgba(244, 197, 66, 0.18);
+        }
+
+        .button:hover {
+            filter: brightness(1.03);
+            box-shadow: 0 14px 30px rgba(244, 197, 66, 0.22);
+        }
+
+        .button:active {
+            transform: translateY(1px);
+        }
+
+        .footer {
+            margin-top: 18px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        @media (max-width: 520px) {
+            .card {
+                padding: 24px;
+                border-radius: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Config login</h1>
+    <main class="card">
+        <div class="top">
+            <div class="brand">
+                <div class="brand-mark">K</div>
+                <div class="brand-text">
+                    <strong>konfwg</strong>
+                    <span>secure configuration access</span>
+                </div>
+            </div>
 
-    {% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
+            <div class="tag">
+                <span class="tag-dot"></span>
+                Protected route
+            </div>
 
-    <form method="post" action="/conf/{{ token }}/login">
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" required>
-        <button type="submit">Login</button>
-    </form>
+            <h1>Authenticate</h1>
+            <p class="subtitle">
+                Enter the password provided for this configuration page to access the protected WireGuard client configuration.
+            </p>
+        </div>
+
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" action="/conf/{{ token }}/login">
+            <div class="field">
+                <label for="password">Access password</label>
+                <div class="input-wrap">
+                    <span class="input-icon">⌁</span>
+                    <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        placeholder="Enter password"
+                        autocomplete="current-password"
+                        required
+                    >
+                </div>
+                <div class="hint">
+                    Access is temporary and tied to this specific configuration page.
+                </div>
+            </div>
+
+            <button class="button" type="submit">Unlock portal</button>
+        </form>
+
+        <div class="footer">
+            Authorized use only. This page is intended for secure client configuration delivery.
+        </div>
+    </main>
 </body>
 </html>

@@ -4,16 +4,511 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>konfwg portal</title>
+    <style>
+        :root {
+            --bg: #111315;
+            --panel: #1a1d21;
+            --panel-soft: #20242a;
+            --panel-dark: #15181b;
+            --border: #31363d;
+            --text: #f2f4f7;
+            --muted: #9aa3ad;
+            --accent: #f4c542;
+            --accent-soft: rgba(244, 197, 66, 0.12);
+            --success: #7ee787;
+            --danger: #ff7b72;
+            --shadow: 0 18px 50px rgba(0, 0, 0, 0.4);
+            --radius: 18px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(244, 197, 66, 0.08), transparent 24%),
+                linear-gradient(180deg, #0e1012 0%, #14171a 100%);
+            color: var(--text);
+        }
+
+        body {
+            padding: 20px;
+        }
+
+        .page {
+            max-width: 1120px;
+            margin: 0 auto;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 18px;
+            padding: 18px 20px;
+            background: rgba(26, 29, 33, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-mark {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, #2a2f36 0%, #1b1f24 100%);
+            border: 1px solid rgba(244, 197, 66, 0.18);
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .brand-text strong {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-text span {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 9px 12px;
+            border-radius: 999px;
+            background: rgba(126, 231, 135, 0.08);
+            border: 1px solid rgba(126, 231, 135, 0.16);
+            color: #d8ffe0;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: var(--success);
+        }
+
+        .hero {
+            margin-bottom: 18px;
+            padding: 26px;
+            background: rgba(26, 29, 33, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: var(--accent-soft);
+            border: 1px solid rgba(244, 197, 66, 0.14);
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 14px;
+        }
+
+        .tag-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: var(--accent);
+        }
+
+        .hero h1 {
+            margin: 0 0 10px;
+            font-size: 30px;
+            letter-spacing: -0.03em;
+        }
+
+        .hero p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.7;
+            max-width: 68ch;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 18px;
+        }
+
+        .card {
+            background: rgba(26, 29, 33, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .card-inner {
+            padding: 22px;
+        }
+
+        .section-title {
+            margin: 0 0 6px;
+            font-size: 18px;
+            letter-spacing: -0.02em;
+        }
+
+        .section-subtitle {
+            margin: 0 0 16px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .button,
+        .button-secondary,
+        .button-danger {
+            height: 44px;
+            padding: 0 14px;
+            border-radius: 12px;
+            border: 0;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.12s ease, filter 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .button {
+            background: linear-gradient(180deg, #ffd45f 0%, #f4c542 100%);
+            color: #17191b;
+            box-shadow: 0 10px 26px rgba(244, 197, 66, 0.18);
+        }
+
+        .button:hover {
+            filter: brightness(1.03);
+            box-shadow: 0 14px 30px rgba(244, 197, 66, 0.22);
+        }
+
+        .button-secondary {
+            background: #23282e;
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .button-secondary:hover {
+            background: #2a3037;
+        }
+
+        .button-danger {
+            width: 100%;
+            background: rgba(255, 123, 114, 0.08);
+            color: #ffd3cf;
+            border: 1px solid rgba(255, 123, 114, 0.16);
+        }
+
+        .button-danger:hover {
+            background: rgba(255, 123, 114, 0.12);
+        }
+
+        .code-shell {
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            background: #101316;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 14px;
+            background: #161a1e;
+            border-bottom: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .code-title {
+            font-weight: 600;
+        }
+
+        pre {
+            margin: 0;
+            padding: 16px;
+            color: #e7ebef;
+            font-family: "JetBrains Mono", "Fira Code", "SFMono-Regular", Consolas, monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-x: auto;
+        }
+
+        .side {
+            display: grid;
+            gap: 18px;
+        }
+
+        .meta-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .meta-item {
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .meta-label {
+            color: var(--muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 4px;
+        }
+
+        .meta-value {
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        .qr-wrap {
+            display: grid;
+            place-items: center;
+            padding: 16px;
+            border-radius: 16px;
+            background: #13161a;
+            border: 1px dashed rgba(244, 197, 66, 0.22);
+        }
+
+        .qr-wrap img {
+            max-width: 100%;
+            height: auto;
+            background: white;
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        .note {
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .logout-form {
+            margin: 0;
+        }
+
+        @media (max-width: 900px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 14px;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .hero {
+                padding: 22px;
+            }
+
+            .hero h1 {
+                font-size: 26px;
+            }
+
+            .card-inner {
+                padding: 18px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .actions .button,
+            .actions .button-secondary {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Config portal</h1>
+    <main class="page">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-mark">K</div>
+                <div class="brand-text">
+                    <strong>konfwg</strong>
+                    <span>secure configuration portal</span>
+                </div>
+            </div>
 
-    <p>Site ID: {{ site.site_id }}</p>
-    <p>Peer ID: {{ site.peer_id }}</p>
-    <p>Expires at: {{ site.expires_at }}</p>
+            <div class="status">
+                <span class="status-dot"></span>
+                Authenticated session
+            </div>
+        </header>
 
-    <form method="post" action="/conf/{{ token }}/logout">
-        <button type="submit">Logout</button>
-    </form>
+        <section class="hero">
+            <div class="tag">
+                <span class="tag-dot"></span>
+                Protected content
+            </div>
+
+            <h1>WireGuard client configuration</h1>
+            <p>
+                This page provides temporary access to the generated client profile for this peer.
+                You can review the configuration, download it as a <code>.conf</code> file, or import it on mobile using the QR code.
+            </p>
+        </section>
+
+        <section class="layout">
+            <section class="card">
+                <div class="card-inner">
+                    <h2 class="section-title">Client configuration</h2>
+                    <p class="section-subtitle">
+                        Use the file download or copy the configuration directly if needed.
+                    </p>
+
+                    <div class="actions">
+                        <a class="button" href="{{ download_url }}">Download .conf</a>
+                        <button class="button-secondary" type="button" id="copy-config-button">Copy config</button>
+                    </div>
+
+                    <div class="code-shell">
+                        <div class="code-header">
+                            <span class="code-title">client.conf</span>
+                            <span>generated securely</span>
+                        </div>
+                        <pre id="config-content">{{ config_text }}</pre>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="side">
+                <section class="card">
+                    <div class="card-inner">
+                        <h2 class="section-title">QR import</h2>
+                        <p class="section-subtitle">
+                            Scan with the WireGuard mobile client to import this profile.
+                        </p>
+
+                        <div class="qr-wrap">
+                            <img src="{{ qr_url }}" alt="WireGuard QR code">
+                        </div>
+
+                        <div class="note">
+                            Only scan this code on a trusted device. It contains the full client configuration.
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div class="card-inner">
+                        <h2 class="section-title">Access details</h2>
+
+                        <div class="meta-list">
+                            <div class="meta-item">
+                                <div class="meta-label">Site ID</div>
+                                <div class="meta-value">{{ site.site_id }}</div>
+                            </div>
+
+                            <div class="meta-item">
+                                <div class="meta-label">Peer ID</div>
+                                <div class="meta-value">{{ site.peer_id }}</div>
+                            </div>
+
+                            <div class="meta-item">
+                                <div class="meta-label">Expires at</div>
+                                <div class="meta-value">{{ site.expires_at }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div class="card-inner">
+                        <h2 class="section-title">Session</h2>
+                        <p class="section-subtitle">
+                            End the current authenticated session for this browser.
+                        </p>
+
+                        <form class="logout-form" method="post" action="/conf/{{ token }}/logout">
+                            <button class="button-danger" type="submit">Logout</button>
+                        </form>
+                    </div>
+                </section>
+            </aside>
+        </section>
+    </main>
+
+    <script>
+        const copyButton = document.getElementById("copy-config-button");
+        const configContent = document.getElementById("config-content");
+
+        if (copyButton && configContent) {
+            copyButton.addEventListener("click", async () => {
+                try {
+                    await navigator.clipboard.writeText(configContent.innerText);
+                    const original = copyButton.textContent;
+                    copyButton.textContent = "Copied";
+                    setTimeout(() => {
+                        copyButton.textContent = original;
+                    }, 1400);
+                } catch (error) {
+                    const original = copyButton.textContent;
+                    copyButton.textContent = "Copy failed";
+                    setTimeout(() => {
+                        copyButton.textContent = original;
+                    }, 1400);
+                }
+            });
+        }
+    </script>
 </body>
 </html>

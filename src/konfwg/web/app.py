@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from fastapi import FastAPI, Request, HTTPException, Form
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from konfwg.config import configuration
 from konfwg.database.controller import DBController
 from konfwg.database.models import Site
+from konfwg.wg.render import ensure_client_bundle
 from konfwg.security import (
     COOKIE_NAME,
     COOKIE_TTL,
@@ -48,6 +49,34 @@ def is_authed(request: Request, site: Site) -> bool:
         return False
     return cookie_data.get("site_id") == site.site_id
 
+@app.get("/conf/{token}/download")
+async def download_config(request: Request, token: str):
+    site = check_site_validity(token)
+    if not is_authed(request, site):
+        raise HTTPException(status_code=403, detail="Not authenticated")
+
+    conf_path, _ = ensure_client_bundle(token=token)
+
+    return FileResponse(
+        path=conf_path,
+        media_type="text/plain",
+        filename=f"peer-{site.peer_id}.conf",
+    )
+
+@app.get("/conf/{token}/qr")
+async def get_qr(request: Request, token: str):
+    site = check_site_validity(token)
+    if not is_authed(request, site):
+        raise HTTPException(status_code=403, detail="Not authenticated")
+
+    _, qr_path = ensure_client_bundle(token=token)
+
+    return FileResponse(
+        path=qr_path,
+        media_type="image/png",
+        filename=f"peer-{site.peer_id}.png",
+    )
+
 @app.get("/conf/{token}")
 async def get_login(request: Request, token: str):
     site = check_site_validity(token)
@@ -59,6 +88,8 @@ async def get_login(request: Request, token: str):
             db.commit()
         finally:
             db.close()
+        conf_path, qr_path = ensure_client_bundle(token=token)
+        config_text = conf_path.read_text(encoding="utf-8")
         return templates.TemplateResponse(
             request=request,
             name="portal.html",
@@ -66,14 +97,19 @@ async def get_login(request: Request, token: str):
                 "request": request,
                 "token": token,
                 "site": site,
+                "config_text": config_text,
+                "qr_url": f"/conf/{token}/qr",
+                "download_url": f"/conf/{token}/download",
             }
         )
     return templates.TemplateResponse(
         request=request,
         name="login.html",
         context={
+            "request": request,
             "token": token,
             "site": site,
+            "error": None,
         },
     )
 

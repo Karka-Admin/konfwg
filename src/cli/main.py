@@ -2,8 +2,9 @@ import typer
 import secrets
 from datetime import datetime, timezone, timedelta
 
+from konfwg.wg.render import write_client_bundle, write_server_config_file
 from konfwg.database.controller import DBController
-from konfwg.wg.commands import wg_genkey, wg_genpsk, wg_pubkey
+from konfwg.wg.commands import wg_genkey, wg_genpsk, wg_pubkey, wg_restart
 from konfwg.config import configuration
 from konfwg.security import *
 from konfwg.network import *
@@ -126,6 +127,9 @@ def add_peer(name: str, interface: str = "wg0"):
     finally: 
         db.close()
 
+    write_client_bundle(token=token)
+    wg_restart(interface)
+
     print(f"\nNew peer {name} has been created successfully.")
     print(f"Configuration is accessible via: {configuration.BASE_URL}/conf/{token}")
     print(f"Password: {password}")
@@ -160,3 +164,13 @@ def add_interface(name: str = "wg0", address: str = "10.8.0.1/24", port: int = 5
         raise
     finally:
         db.close()
+
+@app.command()
+def sync_interface(name: str = "wg0"):
+    output_path = write_server_config_file(
+        interface_name=name,
+        post_up="iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE",
+        post_down="iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE",
+    )
+    wg_restart(name)
+    print(f"Server config written to {output_path}")

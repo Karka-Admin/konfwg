@@ -24,6 +24,7 @@ dependencies = [
     "python-multipart >= 0.0.22",
     "bcrypt >= 5.0.0",
     "itsdangerous >= 2.2.0",
+    "qrcode[pil] >= 8.2",
 ]
 
 [project.scripts]
