@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 import qrcode
 from jinja2 import Environment, FileSystemLoader
 
+from konfwg.database.models import Interface
 from konfwg.config import configuration
 from konfwg.database.controller import DBController
 
@@ -18,7 +19,7 @@ class ClientConfigContext:
     client_dns: Optional[str]
 
     server_public_key: str
-    server_preshared_key: Optional[str]
+    preshared_key: Optional[str]
     server_endpoint: str
 
     allowed_ips: str
@@ -27,7 +28,7 @@ class ClientConfigContext:
 @dataclass(frozen=True)
 class ServerConfigContext:
     interface_address: str
-    interface_port: str
+    interface_port: int
     interface_private_key: str
     post_up: Optional[str]
     post_down: Optional[str]
@@ -65,7 +66,7 @@ def _normalize_host_port(host_or_endpoint: str, port: str | int) -> str:
 
     return f"{value}:{port}"
 
-def derive_server_endpoint(interface) -> str:
+def derive_server_endpoint(interface: Interface) -> str:
     """
     Picks the best endpoint source for client configs.
 
@@ -104,7 +105,7 @@ def normalize_server_peer_allowed_ips(address: str) -> str:
     return f"{value}/32"
 
 def render_client_config_from_token(*, db: DBController, token: str) -> str:
-    site = db.get_site(token)
+    site = db.get_site_by_token(token)
     if site is None:
         raise ValueError("site_not_found")
 
@@ -121,7 +122,7 @@ def render_client_config_from_token(*, db: DBController, token: str) -> str:
         client_address=normalize_client_address(peer.address),
         client_dns=None,
         server_public_key=interface.public_key,
-        server_preshared_key=peer.preshared_key,
+        preshared_key=peer.preshared_key,
         server_endpoint=derive_server_endpoint(interface),
         allowed_ips="0.0.0.0/0, ::/0",
         persistent_keepalive=int(peer.keepalive or 25),
@@ -131,19 +132,13 @@ def render_client_config_from_token(*, db: DBController, token: str) -> str:
     template = env.get_template("client.conf.j2")
     return template.render(**ctx.__dict__).strip() + "\n"
 
-def render_server_config_from_interface(
-    *,
-    db: DBController,
-    interface_name: str,
-    post_up: Optional[str] = None,
-    post_down: Optional[str] = None,
-) -> str:
-    interface = db.get_interface(interface_name)
+def render_server_config_from_interface(*, db: DBController, interface_name: str, post_up: Optional[str] = None, post_down: Optional[str] = None) -> str:
+    interface = db.get_interface_by_name(interface_name)
     if interface is None:
         raise ValueError("interface_not_found")
 
-    db_peers = db.get_peers_by_interface(interface.interface_id) or []
-    active_peers = [peer for peer in db_peers if int(peer.active) == 1]
+    db_peers = db.list_peers_by_interface_id(interface.interface_id)
+    active_peers = [peer for peer in db_peers if peer.active]
 
     peers: list[dict] = []
     for peer in active_peers:
@@ -158,7 +153,7 @@ def render_server_config_from_interface(
 
     ctx = ServerConfigContext(
         interface_address=interface.address,
-        interface_port=str(interface.port),
+        interface_port=interface.port,
         interface_private_key=interface.private_key,
         post_up=post_up,
         post_down=post_down,
@@ -198,20 +193,14 @@ def write_client_bundle(*, token: str) -> tuple[Path, Path]:
         db.close()
 
 def ensure_client_bundle(*, token: str) -> tuple[Path, Path]:
-    conf_path = get_site_conf_path(token)
-    qr_path = get_site_qr_path(token)
+    # conf_path = get_site_conf_path(token)
+    # qr_path = get_site_qr_path(token)
 
-    if conf_path.exists() and qr_path.exists():
-        return conf_path, qr_path
-
+    # if conf_path.exists() and qr_path.exists():
+    #    return conf_path, qr_path
     return write_client_bundle(token=token)
 
-def write_server_config_file(
-    *,
-    interface_name: str,
-    post_up: Optional[str] = None,
-    post_down: Optional[str] = None,
-) -> Path:
+def write_server_config_file(*, interface_name: str, post_up: Optional[str] = None, post_down: Optional[str] = None) -> Path:
     db = DBController()
     try:
         config_text = render_server_config_from_interface(

@@ -22,13 +22,13 @@ templates = Jinja2Templates(directory=str(configuration.CODE_PATH / "src" / "kon
 def check_site_validity(token: str) -> Site:
     db = DBController()
     try:
-        site = db.get_site(token)
+        site = db.get_site_by_token(token)
         if site is None:
             raise HTTPException(status_code=404, detail="Page not found")
         if site.revoked:
             raise HTTPException(status_code=404, detail="Page not found")
 
-        expires_at = datetime.fromisoformat(site.expires_at)
+        expires_at = site.expires_at
         if expires_at.tzinfo is None:
             expires_at = expires_at.replace(tzinfo=timezone.utc)
 
@@ -55,7 +55,7 @@ async def download_config(request: Request, token: str):
     if not is_authed(request, site):
         raise HTTPException(status_code=403, detail="Not authenticated")
 
-    conf_path, _ = ensure_client_bundle(token=token)
+    conf_path, qr_path = ensure_client_bundle(token=token)
 
     return FileResponse(
         path=conf_path,
@@ -69,7 +69,7 @@ async def get_qr(request: Request, token: str):
     if not is_authed(request, site):
         raise HTTPException(status_code=403, detail="Not authenticated")
 
-    _, qr_path = ensure_client_bundle(token=token)
+    conf_path, qr_path = ensure_client_bundle(token=token)
 
     return FileResponse(
         path=qr_path,
@@ -83,8 +83,8 @@ async def get_login(request: Request, token: str):
     if is_authed(request, site):
         db = DBController()
         try:
-            db_site = db.get_site(token)
-            db_site.last_access_at = datetime.now(timezone.utc).isoformat()
+            db_site = db.get_site_by_token(token)
+            db_site.last_access_at = datetime.now(timezone.utc)
             db.commit()
         finally:
             db.close()
