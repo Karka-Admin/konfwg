@@ -145,7 +145,7 @@ def render_server_config_from_interface(*, db: DBController, interface_name: str
         peers.append(
             {
                 "public_key": peer.public_key,
-                "preshared_key": peer.preshared_key,
+                #"preshared_key": peer.preshared_key,
                 "allowed_ips": normalize_server_peer_allowed_ips(peer.address),
                 "persistent_keepalive": int(peer.keepalive) if peer.keepalive else None,
             }

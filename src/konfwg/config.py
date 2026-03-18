@@ -12,6 +12,7 @@ class Configuration(BaseSettings):
     konfwg_tmp_path: /tmp/konfwg # konfwg temporary files (CURRENTLY UNIMPLEMENTED)
     konfwg_sudo_path: /etc/sudoers.d # konfwg sudoers configuration
     wg_directory: /etc/wireguard # wireguard directory
+    wg_publicint: public interface of the server
     """
     BASE_URL: str
 
@@ -24,6 +25,7 @@ class Configuration(BaseSettings):
     SUDO_PATH: Path
     WG_DIRECTORY: Path
 
+    WG_PUBLICINT: str
     DEFAULT_TTL: int = 900
     DEFAULT_HITS: int = 1
     SECRET: str

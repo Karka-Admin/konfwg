@@ -308,11 +308,23 @@ def sync_interface(name: str = typer.Option("wg0", "--name", help="Interface nam
     Regenerates and writes server config for an interface, then restarts WireGuard.
     This command is intended for the privileged execution path.
     """
+    public_if = configuration.WG_PUBLICINT
+    post_up = (
+        f"iptables -A FORWARD -i {name} -o {public_if} -j ACCEPT; "
+        f"iptables -A FORWARD -i {public_if} -o {name} -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; "
+        f"iptables -t nat -A POSTROUTING -o {public_if} -j MASQUERADE"
+    )
+    post_down = (
+        f"iptables -D FORWARD -i {name} -o {public_if} -j ACCEPT; "
+        f"iptables -D FORWARD -i {public_if} -o {name} -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; "
+        f"iptables -t nat -D POSTROUTING -o {public_if} -j MASQUERADE"
+    )
     output_path = write_server_config_file(
         interface_name=name,
-        post_up="iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE",
-        post_down="iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE",
+        post_up=post_up,
+        post_down=post_down
     )
+
     wg_restart(name)
     print(f"Server config written to {output_path}")
     print(f"WireGuard interface '{name}' restarted.")
