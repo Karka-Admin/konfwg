@@ -1,1 +1,1 @@
-ansible-playbook -i ansible/inventories/hosts.yml ansible/playbooks/site.yml -K
+ansible-playbook -i inventories/hosts.yml playbooks/site.yml -K

@@ -46,5 +46,6 @@
     "**/logs": true
   },
 
-  "python.testing.autoTestDiscoverOnSaveEnabled": false
+  "python.testing.autoTestDiscoverOnSaveEnabled": false,
+  "python-envs.defaultEnvManager": "ms-python.python:system"
 }

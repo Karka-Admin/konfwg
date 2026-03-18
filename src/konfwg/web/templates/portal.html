@@ -1,11 +1,19 @@
-<!doctype html>
-<html>
-  <body>
-    <h2>WireGuard config</h2>
-    <ul>
-      <li><a href="/user/{{ token }}/download">Download config</a></li>
-      <li><a href="/user/{{ token }}/qr">View QR</a></li>
-    </ul>
-    <p>Expires at: {{ expires_at }}</p>
-  </body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>konfwg portal</title>
+</head>
+<body>
+    <h1>Config portal</h1>
+
+    <p>Site ID: {{ site.site_id }}</p>
+    <p>Peer ID: {{ site.peer_id }}</p>
+    <p>Expires at: {{ site.expires_at }}</p>
+
+    <form method="post" action="/conf/{{ token }}/logout">
+        <button type="submit">Logout</button>
+    </form>
+</body>
 </html>
