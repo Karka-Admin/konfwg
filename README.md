@@ -1,228 +1,374 @@
 # konfwg
 
-Infrastructure-as-Code driven WireGuard configuration and management toolkit
+konfwg is a lightweight WireGuard configuration management tool built around Infrastructure-as-Code principles.
 
-konfwg is a lightweight automation system designed to simplify deployment, configuration, and lifecycle management of WireGuard VPN servers and peers. It combines Infrastructure-as-Code principles, Ansible automation, and a Python-based API to provide a reproducible, maintainable, and extensible VPN management environment.
+It combines:
+- a CLI for managing WireGuard interfaces and peers,
+- a FastAPI web application for temporary peer configuration delivery,
+- and an Ansible deployment stack for provisioning the full environment.
 
----
+The project is designed to stay simple, reproducible, and usable on low-resource systems.
 
-## Features
+## What it does
 
-* Automated WireGuard server provisioning using Ansible
-* Secure key generation and peer configuration management
-* Infrastructure-as-Code approach (idempotent, reproducible deployments)
-* FastAPI backend for orchestration and control
-* SQLite (development) / PostgreSQL (production) support
-* QR code generation for mobile client onboarding
-* Caddy reverse proxy integration with automatic TLS
-* Works locally (WSL2/Linux) and on remote VPS environments
+konfwg currently provides:
 
----
+- WireGuard interface management
+- WireGuard peer management
+- SQLite-backed metadata storage through SQLAlchemy
+- temporary password-protected configuration pages
+- QR code generation for mobile WireGuard clients
+- server and client configuration rendering from templates
+- Ansible-based deployment of system dependencies and service configuration
 
-## Architecture Overview
+## Current architecture
 
-konfwg separates concerns into clear layers:
+The project is split into two main parts:
 
-* Automation Layer – Ansible playbooks provision and configure infrastructure
-* Application Layer – FastAPI backend manages peers, configs, and orchestration
-* Data Layer – SQLite/PostgreSQL stores configuration state and metadata
-* Network Layer – WireGuard handles secure encrypted tunnels
+1. **Application/tooling**
+   - CLI built with Typer
+   - FastAPI web app
+   - SQLAlchemy models and controller
+   - WireGuard config rendering logic
 
-The system follows Infrastructure-as-Code principles:
+2. **Infrastructure**
+   - Ansible roles for system setup
+   - WireGuard installation/configuration
+   - Caddy reverse proxy
+   - konfwg service deployment
 
-* Declarative configuration
-* Idempotent deployments
-* Version-controlled infrastructure
+## Project structure
 
----
-
-## Project Structure
-
+```text
+.
+├── ansible
+│   ├── ansible.cfg
+│   ├── inventories
+│   │   ├── group_vars
+│   │   │   └── all
+│   │   │       ├── caddy.yml
+│   │   │       ├── konfwg.yml
+│   │   │       └── wireguard.yml
+│   │   └── hosts.yml
+│   ├── playbooks
+│   │   └── site.yml
+│   └── roles
+│       ├── caddy
+│       ├── konfwg
+│       ├── system
+│       └── wireguard
+├── docs
+│   └── documentation.md
+├── LICENSE
+├── pyproject.toml
+├── README.md
+├── setup.sh
+└── src
+    ├── cli
+    │   └── main.py
+    └── konfwg
+        ├── config.py
+        ├── database
+        │   ├── base.py
+        │   ├── controller.py
+        │   ├── engine.py
+        │   └── models.py
+        ├── initialize.py
+        ├── network.py
+        ├── security.py
+        ├── web
+        │   ├── app.py
+        │   └── templates
+        │       ├── login.html
+        │       └── portal.html
+        └── wg
+            ├── commands.py
+            ├── render.py
+            └── templates
+                ├── client.conf.j2
+                └── server.conf.j2
 ```
-konfwg/
-│
-├── backend/            # FastAPI application
-│   ├── api/            # Routes/endpoints
-│   ├── models/         # Pydantic models
-│   ├── services/       # Business logic
-│   └── main.py         # Entry point
-│
-├── ansible/            # Infrastructure automation
-│   ├── inventories/
-│   │   ├── dev/
-│   │   └── prod/
-│   ├── playbooks/
-│   │   ├── site.yml
-│   │   └── wireguard.yml
-│   └── roles/
-│
-├── data/               # Runtime-generated files
-│   ├── keys/
-│   ├── configs/
-│   └── db/
-│
-├── docs/               # Documentation & diagrams
-├── infra/              # Infrastructure definitions
-├── scripts/            # Helper/setup scripts
-│   └── setup.sh
-│
-├── konfwg.py           # CLI entry point
-├── requirements.txt
-└── README.md
-```
 
----
+## Main components
 
-## Quick Start
+### CLI
+
+The CLI is responsible for:
+- creating, updating, listing, and deleting database objects,
+- generating peer metadata,
+- preparing data that later gets applied to WireGuard.
+
+The CLI does **not** automatically apply all WireGuard changes directly in every case, because the project separates lower-privileged application operations from privileged system config writes.
+
+### Web app
+
+The FastAPI app provides:
+- password-protected temporary peer access pages,
+- signed cookie-based access control,
+- QR code and `.conf` download endpoints,
+- token expiry and revocation checks.
+
+### Database
+
+The SQLite database stores:
+- `Interface`
+- `Peer`
+- `Site`
+- `AuditLog`
+
+Relationships are configured through SQLAlchemy models.
+
+### WireGuard rendering
+
+The rendering layer:
+- builds server configuration from interfaces and active peers,
+- builds client configuration from peer + interface + site token,
+- generates QR codes for client configs.
+
+### Ansible
+
+The Ansible stack provisions:
+- base system packages,
+- WireGuard,
+- Caddy,
+- konfwg service files and configuration.
+
+## Requirements
+
+### For local development
+
+- Linux
+- Python 3.11+
+- virtual environment support
+- WireGuard tools available if you want to test full functionality
+- sudo access for privileged WireGuard sync operations
+
+### For deployment
+
+- a Linux VPS or server
+- Ansible installed on the control machine
+- SSH access to the target machine
+- sudo privileges on the target host
+
+## Installation
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/konfwg.git
+git clone https://github.com/<your-username>/konfwg.git
 cd konfwg
 ```
 
-### 2. Setup environment
+### 2. Run local setup
 
 ```bash
-./scripts/setup.sh
+chmod +x setup.sh
+./setup.sh
 ```
 
-This installs:
+This prepares the local Python environment and installs the project.
 
-* Python dependencies
-* Ansible
-* Required system packages
+### 3. Review configuration
 
-### 3. Run backend
+Review and adjust the inventory and group variables under:
 
-```bash
-uvicorn backend.main:app --reload
+```text
+ansible/inventories/hosts.yml
+ansible/inventories/group_vars/all/caddy.yml
+ansible/inventories/group_vars/all/konfwg.yml
+ansible/inventories/group_vars/all/wireguard.yml
 ```
 
-### 4. Provision WireGuard server
+You should verify values such as:
+- domain / base URL,
+- WireGuard interface settings,
+- install and runtime paths,
+- service-specific configuration.
+
+## Deployment
+
+The full deployment is done with Ansible:
 
 ```bash
 cd ansible
-ansible-playbook -i inventories/dev/hosts playbooks/site.yml
+ansible-playbook -i inventories/hosts.yml playbooks/site.yml -K
 ```
 
----
+This applies the configured roles and deploys the system.
 
-## Requirements
+## Running the web app locally
 
-* Linux (Debian/Ubuntu recommended)
-* Python 3.10+
-* Ansible
-* WireGuard
-* Caddy
-* qrencode
+For local development, the FastAPI app can be started with:
 
----
+```bash
+uvicorn konfwg.web.app:app --reload
+```
 
-## Core Capabilities
+## CLI usage
 
-### Server Provisioning
+The CLI entrypoint is:
 
-* Installs WireGuard
-* Configures network interfaces
-* Applies firewall rules
-* Sets up secure defaults
+```bash
+konfwg <command>
+```
 
-### Peer Management
+## Available CLI commands
 
-* Generates key pairs
-* Creates config files
-* Registers peers in database
-* Produces QR codes for mobile clients
+### List objects
 
-### Infrastructure Consistency
+```bash
+konfwg list config
+konfwg list peers
+konfwg list interfaces
+konfwg list sites
+```
 
-* Reproducible deployments
-* Version-controlled configurations
-* Automated updates
+### Add interface
 
----
+```bash
+konfwg add-interface
+```
 
-## Security Principles
+or with explicit values:
 
-* Minimal exposed surface
-* Secure key handling
-* TLS by default via Caddy
-* Configuration isolation between environments
-* Role-based automation separation
+```bash
+konfwg add-interface --name wg0 --address 10.8.0.1/24 --port 51820
+```
 
----
+### Update interface
 
-## Development vs Production
+```bash
+konfwg update-interface wg0 --endpoint vpn.example.com
+```
 
-| Feature    | Development       | Production         |
-| ---------- | ----------------- | ------------------ |
-| Database   | SQLite            | SQLite             |
-| Deployment | Local/WSL         | Remote VPS         |
-| TLS        | Optional          | Enforced           |
-| Inventory  | `inventories/dev` | `inventories/prod` |
+### Delete interface
 
----
+```bash
+konfwg delete-interface wg0
+```
 
-## Roadmap
+### Add peer
 
-* Web UI dashboard
-* Multi-server orchestration
-* Role-based access control
-* Peer usage monitoring
-* Automatic key rotation
-* Containerized deployment
+```bash
+konfwg add-peer alice --iface wg0
+```
 
----
+This creates:
+- a peer in the database,
+- a temporary access site,
+- a password for the portal,
+- and an expiry timestamp.
 
-## Project Goals
+### Update peer
 
-konfwg aims to:
+```bash
+konfwg update-peer alice --keepalive 25 --comment "Laptop"
+```
 
-* Reduce manual VPN configuration errors
-* Provide reproducible infrastructure deployments
-* Enable scalable peer management
-* Serve as a practical implementation of Infrastructure-as-Code principles
+### Delete peer
 
----
+```bash
+konfwg delete-peer alice
+```
 
-## Use Cases
+## Applying WireGuard changes
 
-* Personal VPN infrastructure
-* Academic research projects
-* Small team secure networking
-* Lab environments
-* DevOps automation demonstrations
+Database changes and privileged WireGuard config writes are intentionally separated.
 
----
+After peer or interface changes, apply them with:
 
-## Contributing
+```bash
+sudo konfwg sync-interface --name wg0
+```
 
-Contributions are welcome. Please:
+This command:
+- renders the server configuration,
+- writes the WireGuard config file,
+- restarts the selected WireGuard interface.
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit changes with clear messages
-4. Open a pull request
+## Web interface
 
----
+Peer configuration is accessed through a temporary URL:
+
+```text
+https://<your-domain>/conf/<token>
+```
+
+Flow:
+1. Open the URL
+2. Enter the generated password
+3. Access the portal
+4. Download the `.conf` file or scan the QR code
+
+## Security model
+
+Current access flow is based on:
+- unique token URLs,
+- password-protected login,
+- signed cookies,
+- expiry timestamps,
+- revoked/expired link denial.
+
+Expired or revoked pages return `404`.
+
+## Configuration generation
+
+### Server config
+
+Server WireGuard config is generated from database state through the privileged sync command.
+
+### Client config
+
+Client configuration bundles are generated on demand by the web layer. This avoids stale cached client configs after peer/interface updates.
+
+## Database notes
+
+The project currently uses SQLite through SQLAlchemy.
+
+Main entities:
+- `Interface`
+- `Peer`
+- `Site`
+- `AuditLog`
+
+## Notes on privileges
+
+The project currently separates operations by privilege level:
+
+- normal application/database operations
+- privileged WireGuard config writing and interface restart
+
+Because of that, CRUD commands do not automatically apply live WireGuard config changes.
+
+## Troubleshooting
+
+### Peer/interface changed but WireGuard did not update
+
+Run:
+
+```bash
+sudo konfwg sync-interface --name wg0
+```
+
+### Portal works but downloaded config is outdated
+
+Client bundles are generated dynamically by the web application. Make sure the latest database state is applied and the web service is running correctly.
+
+### Interface config file still exists after deleting an interface
+
+Deleting an interface from the database does not automatically remove any already-written privileged system config file. Clean that up manually if needed.
+
+## Development notes
+
+This repository currently contains both:
+- the Python application/tooling code,
+- the Ansible deployment structure.
+
+Typical workflow:
+1. change database/application state through CLI,
+2. apply WireGuard config with privileged sync,
+3. access peer portal through web app.
 
 ## License
 
-Choose a license that fits your goals (recommended: MIT or Apache-2.0 for open collaboration).
-
----
-
-## Author
-
-Karolis Riaubūnas
-konfwg – WireGuard automation through Infrastructure-as-Code
-
----
-
-## Why konfwg?
-
-WireGuard is simple.
-Infrastructure-as-Code is powerful.
-konfwg combines both into a structured, maintainable system designed for real-world deployment and academic exploration.
+MIT License

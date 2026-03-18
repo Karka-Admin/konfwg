@@ -236,7 +236,7 @@ def add_interface(
         raise
     finally:
         db.close()
-    print(f"Created: {interface}")
+    print(f"Created: {name}")
     print(f"Apply WireGuard changes separately with elevated privileges for interface '{name}'.")
 
 def update_interface(
