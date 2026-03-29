@@ -1,7 +1,7 @@
 konfwg_user: konfwg
 konfwg_group: konfwg
 
-konfwg_base_url: "https://vpn.karkasrv.lt"
+konfwg_base_url: "https://vpn.example.com"
 konfwg_service_name: "konfwg.service"
 konfwg_service_path: "/etc/systemd/system"
 konfwg_uvicorn_host: "127.0.0.1"
