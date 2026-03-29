@@ -80,7 +80,7 @@
   ansible.builtin.copy:
     src: "{{ konfwg_local_dir }}/pyproject.toml"
     dest: "{{ konfwg_code_path }}/"
-    owner: "{{ konfwg_user }}"
+    owner: root
     group: "{{ konfwg_group }}"
     mode: "0644"
 
@@ -144,6 +144,54 @@
     owner: root
     group: root
     mode: "0644"
+
+- name: Create konfwg CLI symlink
+  ansible.builtin.file:
+    src: "{{ konfwg_code_path }}/.venv/bin/konfwg"
+    dest: "{{ konfwg_cli_path }}/konfwg"
+    state: link
+    owner: root
+    group: root
+
+# OWNERSHIP CHECK START
+- name: Ensure konfwg db directory ownership
+  ansible.builtin.file:
+    path: "{{ konfwg_db_path }}"
+    state: directory
+    owner: "{{ konfwg_user }}"
+    group: "{{ konfwg_group }}"
+    mode: "0750"
+
+- name: Check if konfwg database exists
+  ansible.builtin.stat:
+    path: "{{ konfwg_db_path }}/konfwg.db"
+  register: konfwg_db_stat
+
+- name: Fix konfwg database ownership
+  ansible.builtin.file:
+    path: "{{ konfwg_db_path }}/konfwg.db"
+    owner: "{{ konfwg_user }}"
+    group: "{{ konfwg_group }}"
+    mode: "0660"
+  when: konfwg_db_stat.stat.exists
+
+- name: Ensure konfwg tmp directory ownership recursively
+  ansible.builtin.file:
+    path: "{{ konfwg_tmp_path }}"
+    state: directory
+    owner: "{{ konfwg_user }}"
+    group: "{{ konfwg_group }}"
+    mode: "0750"
+    recurse: true
+
+- name: Ensure konfwg log directory ownership
+  ansible.builtin.file:
+    path: "{{ konfwg_log_path }}"
+    state: directory
+    owner: "{{ konfwg_user }}"
+    group: "{{ konfwg_group }}"
+    mode: "0750"
+# OWNERSHIP CHECK END
 
 - name: Enable and start konfwg
   ansible.builtin.systemd:
