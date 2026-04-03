@@ -18,7 +18,6 @@
     owner: root
     group: root
     mode: "0644"
-  notify: Validate and reload Caddy
 
 - name: Create konfwg site config
   ansible.builtin.template:
