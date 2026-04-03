@@ -28,6 +28,12 @@
     group: root
     mode: "0644"
 
+- name: Ensure Caddy is enabled and running
+  ansible.builtin.systemd:
+    name: caddy
+    enabled: true
+    state: started
+
 - name: Validate caddy
   become: true
   block:
@@ -39,9 +45,4 @@
       ansible.builtin.systemd:
         name: caddy
         state: reloaded
-
-- name: Ensure Caddy is enabled and running
-  ansible.builtin.systemd:
-    name: caddy
-    enabled: true
-    state: started
+        
