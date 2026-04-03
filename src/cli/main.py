@@ -238,6 +238,7 @@ def add_interface(
     print(f"Created: {name}")
     print(f"Apply WireGuard changes separately with elevated privileges for interface '{name}'.")
 
+@app.command()
 def update_interface(
     name: str,
     new_name: Optional[str] = typer.Option(None, "--new-name", help="New interface name"),
