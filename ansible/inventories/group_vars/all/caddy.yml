@@ -1,4 +1,4 @@
-konfwg_domain: "vpn.example.com"
+konfwg_domain: "vpn.karkasrv.lt"
 
 caddy_sites_dir: "/etc/caddy/sites"
 caddy_mainfile: "/etc/caddy/Caddyfile"
