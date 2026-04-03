@@ -14,6 +14,9 @@
 - name: Create konfwg user
   ansible.builtin.user:
     name: "{{ konfwg_user }}"
+    group: "{{ konfwg_group }}"
+    groups: "{{ konfwg_group }}"
+    append: true
     system: true
     home: "/nonexistent"
     shell: /usr/sbin/nologin
