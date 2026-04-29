@@ -73,7 +73,7 @@ def list_objects(argument: str):
     print()
 
 @app.command()
-def add_peer(name: str, iface_name: str = typer.Option("wg0", "--iface", help="Interface name"), expires_minutes: int = typer.Option(15, "--expires-minutes", min=1, help="Portal expiry in minutes")):
+def add_peer(name: str, iface_name: str = typer.Option("wg0", "--iface", help="Interface name"), expires_minutes: int = typer.Option(15, "--expires-minutes", min=1, help="Portal expiry in minutes"), use_psk: bool = typer.Option(False, "--psk", help="Generate and use a WireGuard preshared key for this peer.")):
     """
     Creates a new peer.
     """
@@ -92,9 +92,9 @@ def add_peer(name: str, iface_name: str = typer.Option("wg0", "--iface", help="I
         address = get_free_ip(iface, peers)
         private_key = wg_genkey()
         public_key = wg_pubkey(private_key)
-        preshared_key = wg_genpsk()
+        preshared_key = wg_genpsk() if use_psk else None
         expires_at = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes)
-        token=generate_url_token()
+        token = generate_url_token()
 
         peer = db.create_peer(
             interface=iface,
@@ -122,7 +122,12 @@ def add_peer(name: str, iface_name: str = typer.Option("wg0", "--iface", help="I
     finally: 
         db.close()
 
-    write_client_bundle(token=token)
+    try:
+        write_client_bundle(token=token)
+    except Exception as exc:
+        typer.echo(f"WARNING: Peer was created, but client bundle generation failed: {exc}", err=True)
+        typer.echo("Fix the issue and regenerate the client bundle manually.", err=True)
+        raise typer.Exit(code = 1)
 
     print(f"\nNew peer {name} has been created successfully.")
     print(f"Configuration is accessible via: {configuration.BASE_URL}/conf/{token}")
@@ -309,6 +314,14 @@ def sync_interface(name: str = typer.Option("wg0", "--name", help="Interface nam
     Regenerates and writes server config for an interface, then restarts WireGuard.
     This command is intended for the privileged execution path.
     """
+    db = DBController()
+    try:
+        interface = db.get_interface_by_name(name)
+        if interface is None:
+            raise typer.BadParameter(f"Interface '{name}' not found in database.")
+    finally:
+        db.close()
+    
     public_if = configuration.WG_PUBLICINT
     post_up = (
         f"iptables -A FORWARD -i {name} -o {public_if} -j ACCEPT; "
