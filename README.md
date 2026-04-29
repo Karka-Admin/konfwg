@@ -1,149 +1,431 @@
-# konfwg
+# KonfWG
 
-konfwg is a tool for managing WireGuard VPN configurations and distributing client access through temporary, password-protected web pages.
+Automated WireGuard VPN deployment and peer management tool for Linux environments.
 
-It combines:
+KonfWG is a lightweight VPN administration system designed to simplify the deployment, configuration, and management of WireGuard VPN servers and clients. The project combines infrastructure automation, configuration generation, and secure client distribution into a single workflow suitable for small-scale server environments, homelabs, and educational use cases.
 
-- a CLI for managing peers and interfaces  
-- a FastAPI web server for delivering configurations  
-- an SQLite database for state  
-- Ansible for installation and system configuration  
+The system provides:
+
+- Automated WireGuard server deployment using Ansible
+- VPN interface and peer management
+- Automatic IP allocation
+- Secure temporary client configuration portals
+- QR code generation for mobile clients
+- HTTPS reverse proxy integration with Caddy
+- Persistent configuration storage using SQLite
 
 ---
 
-## What it does
+# Features
 
-- Creates WireGuard peers with generated keys  
-- Assigns IP addresses automatically  
-- Generates client configurations  
-- Provides temporary access links with passwords  
-- Expires access after a set time  
-- Stores everything in a local database  
-- Renders and applies WireGuard server configs  
+## Infrastructure Automation
+
+- Automated Linux server preparation
+- WireGuard installation and configuration
+- Automatic Caddy reverse proxy setup
+- Automatic HTTPS certificate provisioning using Let's Encrypt
+- Systemd service configuration
+- IP forwarding and firewall configuration
+
+## VPN Management
+
+- Create and manage WireGuard interfaces
+- Add, update, and remove VPN peers
+- Automatic key generation
+- Automatic IP address assignment
+- WireGuard configuration rendering
+- Interface synchronization with the operating system
+
+## Secure Configuration Distribution
+
+- Temporary configuration download portals
+- Password-protected client access
+- Expiring access tokens
+- QR code generation for mobile WireGuard clients
+- Signed session cookies
+
+## Web Interface
+
+- FastAPI-based lightweight web portal
+- Secure configuration delivery
+- HTTPS support through Caddy
+- Mobile-friendly QR access
+
+---
+
+# Architecture Overview
+
+KonfWG consists of several integrated components:
+
+| Component | Purpose |
+|---|---|
+| WireGuard | VPN tunneling |
+| FastAPI | Web application |
+| SQLite | Persistent storage |
+| SQLAlchemy | ORM and database access |
+| Caddy | Reverse proxy and TLS |
+| Ansible | Infrastructure automation |
+| Typer | Command-line interface |
+
+The system architecture follows a modular approach:
+
+```text
+Administrator
+      |
+      v
+  KonfWG CLI
+      |
+      v
+ SQLite Database
+      |
+      +------------------+
+      |                  |
+      v                  v
+WireGuard           FastAPI Portal
+      |                  |
+      v                  v
+ VPN Clients      Temporary Config Access
+```
+
+---
+
+# Project Structure
+
+```text
+konfwg/
+├── ansible/
+│   ├── inventories/
+│   ├── playbooks/
+│   └── roles/
+├── src/
+│   ├── cli/
+│   └── konfwg/
+│       ├── database/
+│       ├── web/
+│       ├── wg/
+│       └── templates/
+├── setup.sh
+├── pyproject.toml
+└── README.md
+```
+
+---
+
+# Requirements
+
+## Supported Operating Systems
+
+- Debian 12+
+- Ubuntu 22.04+
+
+## Required Software
+
+The setup process installs all required dependencies automatically, including:
+
+- Python 3
+- WireGuard
+- Caddy
+- SQLite
+- iptables
+- Ansible
+
+---
+
+# Installation
+
+## 1. Clone Repository
+
+```bash
+git clone https://github.com/Karka-Admin/konfwg.git
+cd konfwg
+```
+
+## 2. Run Setup Script
+
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+The setup script will:
+
+- Install required packages
+- Configure Ansible
+- Ask for VPN domain name
+- Configure Caddy
+- Deploy KonfWG
+- Start required services
+
+---
+
+# Configuration
+
+Main configuration file:
+
+```text
+/etc/konfwg/konfwg.conf
+```
+
+Example configuration:
+
+```ini
+BASE_URL=https://vpn.example.com
+
+WG_DIRECTORY=/etc/wireguard
+
+DB_PATH=/var/lib/konfwg
+TMP_PATH=/tmp/konfwg
+LOG_PATH=/var/log/konfwg
+
+DEFAULT_TTL=900
+DEFAULT_HITS=1
+
+SECRET=CHANGE_ME
+```
+
+---
+
+# Usage
+
+## Check System Status
+
+```bash
+konfwg status
+```
+
+---
+
+## Create VPN Interface
+
+```bash
+konfwg add-interface \
+    --name wg0 \
+    --address 10.8.0.1/24 \
+    --port 51820
+```
+
+---
+
+## Add VPN Peer
+
+```bash
+konfwg add-peer \
+    --iface wg0 \
+    --name client1
+```
+
+The command automatically:
+
+- Generates keys
+- Allocates a free IP address
+- Creates WireGuard client configuration
+- Generates QR code
+- Creates temporary access portal
 
 Example output:
 
-New peer KarkaLast has been created successfully.
-Configuration is accessible via: https://com.example.com/conf/<token>
-Password: <password>
+```text
+Peer created successfully
+
+Access URL:
+https://vpn.example.com/conf/abc123
+
+Temporary password:
+X9Kd2LqP
+```
 
 ---
 
-## Project structure
+## Synchronize Interface
 
-ansible/        system setup and deployment
-src/            application source code
-setup.sh        installation script
-pyproject.toml  Python project config
+Apply generated configuration to WireGuard:
 
-Main components:
-
-- CLI → src/cli/main.py
-- Web server → src/konfwg/web/app.py
-- Database → src/konfwg/database
-- WireGuard logic → src/konfwg/wg
-
----
-
-## Installation
-
-Run:
-
-./setup.sh
-
-The script will:
-
-- install required packages (git, python, pip, ansible)
-- prompt for your VPN domain
-- update configuration values
-- run the Ansible playbook
-
----
-
-## Configuration
-
-Main configuration is handled through Ansible:
-
-- ansible/inventories/group_vars/all/konfwg.yml
-- ansible/inventories/group_vars/all/caddy.yml
-- ansible/inventories/group_vars/all/wireguard.yml
-
-The domain is set during setup.
-
----
-
-## Usage
-
-### Important
-
-Do not run the tool as root.
-
-Use:
-
-sudo -u konfwg konfwg <command>
-
----
-
-### Create a peer
-
-sudo -u konfwg konfwg add-peer <name>
-
-This will:
-
-- generate keys
-- create database records
-- generate a temporary access page
-- print URL and password
-
----
-
-### Apply WireGuard changes
-
+```bash
 sudo konfwg sync-interface --name wg0
+```
 
 ---
 
-### List objects
+## List Existing Objects
 
-konfwg list-objects peers
-konfwg list-objects interfaces
-konfwg list-objects sites
+### List Interfaces
 
----
+```bash
+konfwg list interfaces
+```
 
-### Update or delete
+### List Peers
 
-konfwg update-peer <name>
-konfwg delete-peer <name>
+```bash
+konfwg list peers
+```
 
----
+### List Temporary Sites
 
-### Interface management
-
-konfwg add-interface
-konfwg delete-interface <name>
-
----
-
-## Web access
-
-https://<your-domain>/conf/<token>
-
-- protected by password  
-- expires automatically  
-- limited access  
+```bash
+konfwg list sites
+```
 
 ---
 
-## Notes
+## Remove Peer
 
-- WireGuard changes are not applied automatically  
-- You must run sync-interface with elevated privileges  
-- Database and temporary files must be owned by the konfwg user  
-- Running commands as root will break permissions  
+```bash
+konfwg delete-peer --name client1
+```
 
 ---
 
-## License
+# Client Configuration Portal
 
-See LICENSE file.
+KonfWG generates temporary HTTPS portals for secure client delivery.
+
+Portal features:
+
+- Password-protected access
+- Temporary availability
+- QR code generation
+- Direct `.conf` download
+- Mobile WireGuard onboarding support
+
+Portal URL format:
+
+```text
+https://vpn.example.com/conf/<token>
+```
+
+---
+
+# Security Features
+
+## Implemented Security Measures
+
+- Password hashing using bcrypt
+- Signed authentication cookies
+- HTTPS-only communication
+- Secure temporary access tokens
+- Expiring configuration portals
+- Restricted filesystem permissions
+- Limited sudo permissions
+- Isolated service account
+
+## Service User
+
+KonfWG runs under a dedicated system user:
+
+```text
+konfwg
+```
+
+---
+
+# Database Model
+
+The system uses SQLite with SQLAlchemy ORM.
+
+Main entities:
+
+| Entity | Purpose |
+|---|---|
+| Interface | Stores WireGuard interface configuration |
+| Peer | Stores VPN client information |
+| Site | Stores temporary portal access information |
+
+---
+
+# Services
+
+## Systemd Service
+
+KonfWG web application runs as:
+
+```text
+konfwg.service
+```
+
+## WireGuard Service
+
+```text
+wg-quick@wg0
+```
+
+## Caddy Service
+
+```text
+caddy.service
+```
+
+---
+
+# Troubleshooting
+
+## Check Service Status
+
+```bash
+sudo systemctl status konfwg
+sudo systemctl status caddy
+sudo systemctl status wg-quick@wg0
+```
+
+---
+
+## View Logs
+
+```bash
+journalctl -u konfwg -f
+```
+
+---
+
+## Restart Services
+
+```bash
+sudo systemctl restart konfwg
+sudo systemctl restart caddy
+sudo systemctl restart wg-quick@wg0
+```
+
+---
+
+# Development
+
+## Development Environment
+
+Recommended setup:
+
+- Visual Studio Code
+- WSL2
+- Debian environment
+- Python virtual environment
+
+## Install Development Dependencies
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+
+pip install -e .
+```
+
+---
+
+# Intended Use
+
+KonfWG was developed as a bachelor thesis project focused on simplifying WireGuard VPN administration through automation and infrastructure-as-code principles.
+
+The project demonstrates:
+
+- Linux server automation
+- Secure configuration management
+- VPN deployment workflows
+- Infrastructure provisioning
+- Python backend development
+- Web-based configuration delivery
+
+---
+
+# License
+
+This project is intended for educational and research purposes.
+
+Please review the repository for licensing information before production use.
